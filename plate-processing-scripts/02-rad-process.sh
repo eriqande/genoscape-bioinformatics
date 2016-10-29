@@ -5,7 +5,7 @@
 #$ -o rad-process.log
 #$ -e rad-process.error
 #$ -pe shared 1
-#$ -l highp,h_data=8G,time=25:00:00
+#$ -l highp,h_data=8G,time=20:00:00
 #$ -M eric.anderson@noaa.gov
 #$ -m bea
 
