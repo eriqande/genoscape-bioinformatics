@@ -1,8 +1,8 @@
 
 
-FASTQC=~/bin/FastQC/fastqc
-PROC_RADTAGS=~/Documents/others_code/stacks-1.44/process_radtags
-CLONE_FILTER=~/Documents/others_code/stacks-1.44/clone_filter
+FASTQC=/u/nobackup/klohmuel/kruegg/bin/FastQC/fastqc
+PROC_RADTAGS=/u/nobackup/klohmuel/kruegg/bin/stacks-1.32/process_radtags
+CLONE_FILTER=/u/nobackup/klohmuel/kruegg/bin/stacks-1.32/clone_filter
 
 
 # deal with MacOS's lameness re: zcat

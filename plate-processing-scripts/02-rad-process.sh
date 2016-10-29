@@ -3,15 +3,12 @@
 #$ -V
 #$ -N rad
 #$ -pe shared 1
-#$ -l highp,h_data=8G,time=100:00:00
-#$ -M kruegg@ucsc.edu,eric.anderson@noaa.gov
+#$ -l highp,h_data=8G,time=25:00:00
+#$ -M eric.anderson@noaa.gov
 #$ -m bea
 
 # This should be run from the top level of the Plate_X directory
-# using qsub.  i.e. qsub ~/genoscape-bioinformatics/plate-processing-scripts/01-fastqc.sh
-
-#. /u/local/Modules/default/init/modules.sh
-#module load samtools
+# using qsub.  i.e. qsub ~/genoscape-bioinformatics/plate-processing-scripts/02-rad-process.sh
 
 
 source ~/genoscape-bioinformatics/program-defs.sh
