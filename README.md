@@ -7,6 +7,7 @@ genoscape-bioinformatics
     -   [ZOLA-1-barcodes-2col.txt](#zola-1-barcodes-2col.txt)
     -   [The `data-defs.sh` file for ZOLA Plate\_1](#the-data-defs.sh-file-for-zola-plate_1)
 -   [Running the scripts](#running-the-scripts)
+-   [Eric's notes to himself](#erics-notes-to-himself)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 Introduction
@@ -73,6 +74,7 @@ This is merely a shell script that defines variables that will be used in the sc
 READ1=rawdata/Silvereye-Plate1_S36_L005_R1_001.fastq.gz # fastq.gz file for Read one.
 READ2=rawdata/Silvereye-Plate1_S36_L005_R2_001.fastq.gz # paths relative to the Plate_1 directory.
 BC2COL=ZOLA-1-barcodes-2col.txt # The two column barcode file
+SHORTNAME=zola-1   # species dash plate number is good.  This is used for output later  
 ```
 
 Running the scripts
@@ -86,3 +88,8 @@ Will put more in here later. But for now, it looks like:
 
 [kruegg@login2 Plate_1]$ qsub ~/genoscape-bioinformatics/plate-processing-scripts/01-fastqc.sh 
 ```
+
+Eric's notes to himself
+-----------------------
+
+I can test this stuff locally on my laptop using data and files that I have put in: `/Users/eriq/Documents/UnsyncedData/ZOLA_100Kreads/Plate_1`
