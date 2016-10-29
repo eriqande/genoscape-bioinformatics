@@ -1,11 +1,16 @@
 #!/bin/bash
 #$ -cwd
 #$ -V
-#$ -N rad
+#$ -N rad_process
+#$ -o rad-process.log
+#$ -e rad-process.error
 #$ -pe shared 1
 #$ -l highp,h_data=8G,time=25:00:00
 #$ -M eric.anderson@noaa.gov
 #$ -m bea
+
+# note that the -o and -e directives above seem important to keep the script
+# from trying to write to a default output location that it is unable to write to
 
 # This should be run from the top level of the Plate_X directory
 # using qsub.  i.e. qsub ~/genoscape-bioinformatics/plate-processing-scripts/02-rad-process.sh

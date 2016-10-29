@@ -93,3 +93,24 @@ Eric's notes to himself
 -----------------------
 
 I can test this stuff locally on my laptop using data and files that I have put in: `/Users/eriq/Documents/UnsyncedData/ZOLA_100Kreads/Plate_1`
+
+Here is a transcript of putting the fastQC and the rad\_processing into the job queue:
+
+``` sh
+[kruegg@login3 Plate_1]$ qsub ~/genoscape-bioinformatics/plate-processing-scripts/01-fastqc.sh 
+JSV: PE=shared
+Your job 899364 ("fastqc") has been submitted
+[kruegg@login3 Plate_1]$ cd ../Plate_2/
+[kruegg@login3 Plate_2]$ qsub ~/genoscape-bioinformatics/plate-processing-scripts/01-fastqc.sh 
+JSV: PE=shared
+Your job 899365 ("fastqc") has been submitted
+[kruegg@login3 Plate_2]$ cd ../Plate_1/
+[kruegg@login3 Plate_1]$ qsub ~/genoscape-bioinformatics/plate-processing-scripts/02-rad-process.sh 
+JSV: PE=shared
+Your job 899366 ("rad") has been submitted
+[kruegg@login3 Plate_1]$ cd ../Plate_2/
+[kruegg@login3 Plate_2]$ qsub ~/genoscape-bioinformatics/plate-processing-scripts/02-rad-process.sh 
+JSV: PE=shared
+Your job 899367 ("rad") has been submitted
+[kruegg@login3 Plate_2]$ 
+```
