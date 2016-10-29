@@ -104,3 +104,13 @@ READ1=rawdata/Silvereye-Plate1_S36_L005_R1_001.fastq.gz # fastq.gz file for Read
 READ2=rawdata/Silvereye-Plate1_S36_L005_R2_001.fastq.gz # paths relative to the Plate_1 directory.
 BC2COL=ZOLA-1-barcodes-2col.txt # The two column barcode file
 ```
+
+## Running the scripts
+
+Will put more in here later.  But for now, it looks like:
+```{sh, eval=FALSE}
+[kruegg@login2 Plate_1]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/Plate_1
+
+[kruegg@login2 Plate_1]$ qsub ~/genoscape-bioinformatics/plate-processing-scripts/01-fastqc.sh 
+```
