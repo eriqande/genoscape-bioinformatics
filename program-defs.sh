@@ -1,0 +1,3 @@
+
+
+FASTQC=~/bin/FastQC/fastqc
