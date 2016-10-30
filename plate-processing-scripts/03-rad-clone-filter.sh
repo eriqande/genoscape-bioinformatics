@@ -39,5 +39,6 @@ cd demultiplexed
 for sample in `ls *.1.fq.gz | cut -f1 -d'.'`
 do
   $CLONE_FILTER -1 $sample.1.fq.gz -2 $sample.2.fq.gz -i gzfastq -o ../dupfiltered >> ../dupfiltered/clone_filter_report.stdout 2>&1
+  gzip $sample.1.fq.fil.fq_1 $sample.2.fq.fil.fq_2 
 done
 

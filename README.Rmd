@@ -19,6 +19,7 @@ knitr::opts_chunk$set(
 Eric's list of things to do:
 
 1. Add some lines to gzip the output after clone-filtering. (At least if we can use it gzipped further down the line.)
+2. Make it resilient to periods in the bird IDs.
 
 
 ## Introduction 
@@ -90,7 +91,8 @@ at the top level of the species directory.
         AACGAACG	GT132
         AGTACAAG	L549
         ```
-    It has 96 lines it.  One line for each bird on the plate.
+    It has 96 lines it.  One line for each bird on the plate.  **Note: As currently written...the IDs can't
+    have periods in them.  I should fix that...
     c) a file called `data-defs.sh` that holds all the variables that will be sent to the scripts.  This file
     is merely a shell script that defines variables that will be used in the scripts. At the current
     time there are only 4 things that need to be set, and it is pretty self-explanatory. 
