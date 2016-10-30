@@ -34,12 +34,36 @@ the current working directory being the directory that holds the `rawdata` direc
 a particular Plate of data, and within that directory there must be a file called `data-defs.sh`
 that includes variable definitions (more on that later.)
 
-So, in order for this to work, we have to impose a specific file structure for each 
+## Installation
+
+Simple.  Clone the repository and then check the paths to the programs and modify them as necessary.
+
+1. Clone the repository into your home directory:
+    ```{sh, eval=FALSE}
+    cd $HOME
+    git clone https://github.com/eriqande/genoscape-bioinformatics
+    ```
+2. Check out the file `program-defs.sh` in the top level of the directory.  This is where you can
+specify paths for all the different programs that are used (which don't live in this repository, itself). 
+(Of course, some, like `awk` and `perl` are just
+assumed to be on your $PATH already.).  The file currently looks like this:
+    ```{r, echo=FALSE, comment=""}
+    cat(readLines("program-defs.sh"), sep = "\n")
+    ```
+Inspect those paths (i.e. for `fastqc`, Stacks' `process_radtags`, and `clone_filter`, etc) and make sure that 
+they are correct for your system. If you are working on Hoffman with Kristen, then these paths should be
+correct.  But you can modify them as need be to use different versions of the programs, or to work on a different
+system.
+
+
+## Directory Structure
+
+In order for this to work, we have to impose a specific file structure for each 
 species.  This seems like good practice anyway.  Here is how we will do it:
 
 1. Each species gets its own directory on `nobackup-klohmuel`.  For example: `ZOLA` at 
 `/u/nobackup/klohmuel/kruegg/ZOLA` for _Zosterops lateralis_.
-2. Each plate of data from that species will get its own directory named `Plate_1` or `Plate_2`, etc.,
+2. Each **plate of data** from that species will get its own directory named `Plate_1` or `Plate_2`, etc.,
 at the top level of the species directory.  
 3. Inside the `Plate_X` directory must be:
     a) a `rawdata` directory that holds the raw-data.  These should be gzipped fastq files; one for 
@@ -48,17 +72,34 @@ at the top level of the species directory.
     which signifies it is for the species ZOLA, plate 1, and it has two columns.  The first column is the barcode
     and the second is the ID of the sample.  There are no headers on the columns. **Make sure that there are no 
     spaces in any of the IDs** of the birds.  This file should have Unix line endings, which means that you probably
-    can't create it direcly from Excel (which gives you MacOS line endings.)
-    c) a file called `data-defs.sh` that holds all the variables that will be sent to the scripts
+    can't create it direcly from Excel (which gives you MacOS line endings.). As an example, here is what
+    `ZOLA-1-barcodes-2col.txt` looks like. The first ten lines of the file are:
+        ```
+        ACAAGCTA	LH130
+        AAACATCG	CDH19
+        ACATTGGC	CDH49
+        ACCACTGT	N110
+        AACGTGAT	APB72
+        CGCTGATC	CDH50
+        CAGATCTG	LH104
+        ATGCCTAA	CDH54
+        AACGAACG	GT132
+        AGTACAAG	L549
+        ```
+    It has 96 lines it.  One line for each bird on the plate.
+    c) a file called `data-defs.sh` that holds all the variables that will be sent to the scripts.  This file
+    is merely a shell script that defines variables that will be used in the scripts. At the current
+    time there are only 4 things that need to be set, and it is pretty self-explanatory. 
+    The definitions will grow, but for now they are as shown in the `data-defs.sh` file for Plate 1 of the 
+    Silvereye data.  Note that any comments can be put in there following a `#`. Note that 
+    you **cannot have any spaces around the equals signs** when you make this file.
+        ```{sh, eval=FALSE}
+        READ1=rawdata/Silvereye-Plate1_S36_L005_R1_001.fastq.gz # fastq.gz file for Read one.
+        READ2=rawdata/Silvereye-Plate1_S36_L005_R2_001.fastq.gz # paths relative to the Plate_1 directory.
+        BC2COL=ZOLA-1-barcodes-2col.txt # The two column barcode file
+        SHORTNAME=zola-1   # species dash plate number is good.  This is used for output later  
+        ```
     
-The plate processing scripts in this repository (i.e. those in `plate-processing-scripts`)  all operate on
-data at the Plate level which is why we have set the directory structure up as we have.  Each
-script creates output in a new directory within the `Plate_X` directory in which it gets 
-executed.
-
-
-## Example Directory Structure
-
 Here is an example of what the directory structure looks like once we have downloaded two plates
 of ZOLA data:
 ```
@@ -76,35 +117,13 @@ of ZOLA data:
 |-------Silvereye-Plate2_S86_L003_R2_001.fastq.gz
 ```
 
-## Examples of what the files look like
+## Plate Processing Scripts
+The plate processing scripts in this repository (i.e. those in `plate-processing-scripts`)  all operate on
+data at the Plate level which is why we have set the directory structure up as we have.  Each
+script creates output in a new directory within the `Plate_X` directory in which it gets 
+executed. _Now info about each script and its output here_
 
-### ZOLA-1-barcodes-2col.txt
-The first ten lines of the file look like this:
-```
-ACAAGCTA	LH130
-AAACATCG	CDH19
-ACATTGGC	CDH49
-ACCACTGT	N110
-AACGTGAT	APB72
-CGCTGATC	CDH50
-CAGATCTG	LH104
-ATGCCTAA	CDH54
-AACGAACG	GT132
-AGTACAAG	L549
-```
-It has 96 lines it.  One line for each bird on the plate.
 
-### The `data-defs.sh` file for ZOLA Plate_1
-This is merely a shell script that defines variables that will be used in the scripts.
-The definitions will grow, but for now they are as follows.  Note that any comments
-can be put in there following a `#`. Note that you **cannot have any spaces around
-the equals signs** when you make this file.
-```{sh, eval=FALSE}
-READ1=rawdata/Silvereye-Plate1_S36_L005_R1_001.fastq.gz # fastq.gz file for Read one.
-READ2=rawdata/Silvereye-Plate1_S36_L005_R2_001.fastq.gz # paths relative to the Plate_1 directory.
-BC2COL=ZOLA-1-barcodes-2col.txt # The two column barcode file
-SHORTNAME=zola-1   # species dash plate number is good.  This is used for output later  
-```
 
 ## Running the scripts
 
