@@ -1,6 +1,7 @@
 genoscape-bioinformatics
 ================
 
+-   [TODO](#todo)
 -   [Introduction](#introduction)
 -   [Installation](#installation)
 -   [Directory Structure](#directory-structure)
@@ -9,6 +10,13 @@ genoscape-bioinformatics
 -   [Eric's notes to himself](#erics-notes-to-himself)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+TODO
+----
+
+Eric's list of things to do:
+
+1.  Add some lines to gzip the output after clone-filtering. (At least if we can use it gzipped further down the line.)
+
 Introduction
 ------------
 

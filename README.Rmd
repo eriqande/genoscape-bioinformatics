@@ -15,6 +15,10 @@ knitr::opts_chunk$set(
 )
 ```
 
+## TODO
+Eric's list of things to do:
+
+1. Add some lines to gzip the output after clone-filtering. (At least if we can use it gzipped further down the line.)
 
 
 ## Introduction 
@@ -137,7 +141,10 @@ Will put more in here later.  But for now, it looks like:
 
 ## Eric's notes to himself
 
-I can test this stuff locally on my laptop using data and files that I have put in: `/Users/eriq/Documents/UnsyncedData/ZOLA_100Kreads/Plate_1`
+I can test this stuff locally on my laptop using data and files that I have put in: `/Users/eriq/Documents/UnsyncedData/ZOLA_100Kreads/Plate_1`.  And making a symlink at
+`/u/nobackup/klohmuel/kruegg/bin` or at `/u/nobackup/klohmuel/kruegg/bin/stacks-1.32` that
+points where it needs to.
+
 
 Here is a transcript of putting the fastQC and the rad_processing into the job queue:
 ```{sh, eval=FALSE}

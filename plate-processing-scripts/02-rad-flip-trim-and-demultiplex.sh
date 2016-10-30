@@ -1,9 +1,9 @@
 #!/bin/bash
 #$ -cwd
 #$ -V
-#$ -N rad_process
-#$ -o rad-process.log
-#$ -e rad-process.error
+#$ -N demultiplex
+#$ -o demultiplex.log
+#$ -e demultiplex.error
 #$ -pe shared 1
 #$ -l highp,h_data=8G,time=20:00:00
 #$ -M eric.anderson@noaa.gov
@@ -54,19 +54,4 @@ mkdir demultiplexed
 $PROC_RADTAGS -i gzfastq -1 flipped/$OUTPATH1.fastq.gz -2 flipped/$OUTPATH2.fastq.gz \
 	-o ./demultiplexed -b $BC2COL -c -q -r -e sbfI --filter_illumina \
 	--adapter_1 GATCGGAAGAGCACACGTCTGAACTCCAGTC --adapter_2 CACTCTTTCCCTACACGACGCTCTTCCGATCT > demultiplexed/process_radtags.stdout 2>&1
-
-###Move orphaned reads to their own directory
-mkdir orphans
-mv demultiplexed/*rem* orphans 
-
-
-###Make directory for duplicate filtered reads
-mkdir dupfiltered
-cd demultiplexed
-
-###Filter duplicate reads from demultiplexed fastq files, creating new files within the dupfiltered directory
-for sample in `ls *.1.fq.gz | cut -f1 -d'.'`
-do
-  $CLONE_FILTER -1 $sample.1.fq.gz -2 $sample.2.fq.gz -i gzfastq -o ../dupfiltered >> ../dupfiltered/clone_filter_report.stdout 2>&1
-done
 
