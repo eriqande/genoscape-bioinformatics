@@ -22,8 +22,12 @@ source ~/genoscape-bioinformatics/program-defs.sh
 source data-defs.sh # call this second so you can override program-defs.sh if you want to
 
 
-###Move orphaned reads to their own directory
-mkdir orphans
+###Move orphaned reads to their own directory.  If the directory is already 
+# there, just leave it.  We may have hotstarted this...
+if [ ! -e orphans ]; then 
+  mkdir orphans
+fi
+
 mv demultiplexed/*rem* orphans 
 
 
