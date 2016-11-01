@@ -18,8 +18,9 @@
 # this is embarrasingly parallel over the input files, but I suspect it is mostly i/o bound 
 # anyway, so I will just run it all in serial...
 
-source ~/genoscape-bioinformatics/program-defs.sh
-source data-defs.sh # call this second so you can override program-defs.sh if you want to
+
+source data-defs.sh 
+source $PROGDEFS
 
 
 ###Move orphaned reads to their own directory.  If the directory is already 

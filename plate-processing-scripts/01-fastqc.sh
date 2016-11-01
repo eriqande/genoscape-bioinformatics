@@ -14,9 +14,8 @@
 
 
 
-
-source ~/genoscape-bioinformatics/program-defs.sh
-source data-defs.sh # call this second so you can override program-defs.sh if you want to
+source data-defs.sh 
+source $PROGDEFS
 
 
 # make necessary output directories

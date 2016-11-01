@@ -15,7 +15,7 @@ TODO
 
 Eric's list of things to do:
 
-1.  Add some lines to gzip the output after clone-filtering. (At least if we can use it gzipped further down the line.)
+1.  Make it resilient to periods in the bird IDs.
 
 Introduction
 ------------
@@ -36,7 +36,7 @@ Simple. Clone the repository and then check the paths to the programs and modify
     git clone https://github.com/eriqande/genoscape-bioinformatics
     ```
 
-2.  Check out the file `program-defs.sh` in the top level of the directory. This is where you can specify paths for all the different programs that are used (which don't live in this repository, itself). (Of course, some, like `awk` and `perl` are just assumed to be on your $PATH already.). The file currently looks like this:
+2.  Check out the file `program-defs.sh` in the top level of the directory. This is an example of how you would specify paths for all the different programs that are to be used (but which don't live in this repository, itself). (Of course, some, like `awk` and `perl` are just assumed to be on your $PATH already.). The file as it arrives with the repo looks like this:
 
 
 
@@ -45,13 +45,18 @@ Simple. Clone the repository and then check the paths to the programs and modify
         CLONE_FILTER=/u/nobackup/klohmuel/kruegg/bin/stacks-1.32/clone_filter
 
 
-        # deal with MacOS's lameness re: zcat
+        # deal with MacOS's lameness re: zcat.  Users should not have to 
+        # alter anything here, but this must still be included!
         ZCAT=zcat
         if [ $(uname -a | awk '{print $1}') == "Darwin" ]; then
           ZCAT=gzcat
         fi
 
-    Inspect those paths (i.e. for `fastqc`, Stacks' `process_radtags`, and `clone_filter`, etc) and make sure that they are correct for your system. If you are working on Hoffman with Kristen, then these paths should be correct. But you can modify them as need be to use different versions of the programs, or to work on a different system.
+    Inspect those paths (i.e. for `fastqc`, Stacks' `process_radtags`, and `clone_filter`, etc) and make sure that they are correct for your system. If you are working on Hoffman with Kristen, then these paths should be correct.
+
+However, if you have working on a different system with different paths you will have to make a new file. You can put it anywhere you want to. In the repository is fine. Name it something else, and then change the paths as needed.
+
+As you will see later in the `data-defs.sh` you have to specify which file should be read for the program definitions.
 
 Directory Structure
 -------------------
@@ -75,10 +80,11 @@ In order for this to work, we have to impose a specific file structure for each 
             AACGAACG    GT132
             AGTACAAG    L549
 
-        It has 96 lines it. One line for each bird on the plate.
-    3.  a file called `data-defs.sh` that holds all the variables that will be sent to the scripts. This file is merely a shell script that defines variables that will be used in the scripts. At the current time there are only 4 things that need to be set, and it is pretty self-explanatory. The definitions will grow, but for now they are as shown in the `data-defs.sh` file for Plate 1 of the Silvereye data. Note that any comments can be put in there following a `#`. Note that you **cannot have any spaces around the equals signs** when you make this file.
+        It has 96 lines it. One line for each bird on the plate. \*\*Note: As currently written...the IDs can't have periods in them. I should fix that...
+    3.  a file called `data-defs.sh` that holds all the variables that will be sent to the scripts. This file is merely a shell script that defines variables that will be used in the scripts. At the current time there are only 5 things that need to be set, and it is pretty self-explanatory. The definitions will grow, but for now they are as shown in the `data-defs.sh` file for Plate 1 of the Silvereye data. Note that any comments can be put in there following a `#`. Note that you **cannot have any spaces around the equals signs** when you make this file.
 
         ``` sh
+        PROGDEFS=/u/home/k/kruegg/genoscape-bioinformatics/program-defs.sh  # file that defines the paths. 
         READ1=rawdata/Silvereye-Plate1_S36_L005_R1_001.fastq.gz # fastq.gz file for Read one.
         READ2=rawdata/Silvereye-Plate1_S36_L005_R2_001.fastq.gz # paths relative to the Plate_1 directory.
         BC2COL=ZOLA-1-barcodes-2col.txt # The two column barcode file
@@ -120,7 +126,7 @@ Will put more in here later. But for now, it looks like:
 Eric's notes to himself
 -----------------------
 
-I can test this stuff locally on my laptop using data and files that I have put in: `/Users/eriq/Documents/UnsyncedData/ZOLA_100Kreads/Plate_1`
+I can test this stuff locally on my laptop using data and files that I have put in: `/Users/eriq/Documents/UnsyncedData/ZOLA_100Kreads/Plate_1`. And making a symlink at `/u/nobackup/klohmuel/kruegg/bin` or at `/u/nobackup/klohmuel/kruegg/bin/stacks-1.32` that points where it needs to.
 
 Here is a transcript of putting the fastQC and the rad\_processing into the job queue:
 

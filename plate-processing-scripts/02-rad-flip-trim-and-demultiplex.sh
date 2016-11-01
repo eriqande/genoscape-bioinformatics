@@ -16,8 +16,10 @@
 # using qsub.  i.e. qsub ~/genoscape-bioinformatics/plate-processing-scripts/02-rad-process.sh
 
 
-source ~/genoscape-bioinformatics/program-defs.sh
-source data-defs.sh # call this second so you can override program-defs.sh if you want to
+source data-defs.sh 
+source $PROGDEFS
+
+
 
 # prepare flipped directory and output file names
 mkdir flipped
