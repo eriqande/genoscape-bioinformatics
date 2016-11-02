@@ -19,10 +19,12 @@ module load bowtie
 source reference-defs.sh # must have name of gzipped fasta file and short-name for reference output directory
 source $PROGDEFS
 
-mkfifo infasta
+mkfifo infasta.fa
 
-$ZCAT  $GENOME_FASTA_GZ > infasta &
+$ZCAT  $GENOME_FASTA_GZ > infasta.fa &
 
 
-bowtie-build infasta $GENOME_OUTNAME
+bowtie-build infasta.fa $GENOME_OUTNAME
+
+rm infasta.fa
 
