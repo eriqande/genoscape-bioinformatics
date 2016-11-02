@@ -7,6 +7,7 @@ genoscape-bioinformatics
 -   [Installation](#installation)
 -   [Directory Structure](#directory-structure)
 -   [Plate Processing Scripts](#plate-processing-scripts)
+-   [Reference Genome Scripts](#reference-genome-scripts)
 -   [Running the scripts](#running-the-scripts)
 -   [Eric's notes to himself](#erics-notes-to-himself)
 
@@ -111,6 +112,19 @@ Plate Processing Scripts
 ------------------------
 
 The plate processing scripts in this repository (i.e. those in `plate-processing-scripts`) all operate on data at the Plate level which is why we have set the directory structure up as we have. Each script creates output in a new directory within the `Plate_X` directory in which it gets executed. *Now info about each script and its output here*
+
+Reference Genome Scripts
+------------------------
+
+These are all scripts that should be run inside the `Reference` directory that goes at the top level of the species directory.
+
+They require a `reference-defs.sh` file there that gives the path to programs and also some other things, like the fasta.gz for the genome and a short name for the genome. For example:
+
+``` sh
+PROGDEFS=/u/home/k/kruegg/genoscape-bioinformatics/program-defs.sh  # file that defines the paths. 
+GENOME_FASTA_GZ=GCA_001281735.1_ASM128173v1_genomic.fna.gz  # zosterops genome (fasta, gzipped)
+GENOME_OUTNAME=ZOLAv0  # name to give the directory where the genome data base will go.
+```
 
 Running the scripts
 -------------------

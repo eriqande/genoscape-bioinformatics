@@ -136,6 +136,19 @@ executed. _Now info about each script and its output here_
 
 
 
+## Reference Genome Scripts
+These are all scripts that should be run inside the `Reference` directory that goes at the top
+level of the species directory.
+
+They require a `reference-defs.sh` file there that gives the path to programs and 
+also some other things, like the fasta.gz for the genome and a short name for the genome.
+For example:
+```{sh, eval = FALSE}
+PROGDEFS=/u/home/k/kruegg/genoscape-bioinformatics/program-defs.sh  # file that defines the paths. 
+GENOME_FASTA_GZ=GCA_001281735.1_ASM128173v1_genomic.fna.gz  # zosterops genome (fasta, gzipped)
+GENOME_OUTNAME=ZOLAv0  # name to give the directory where the genome data base will go.
+```
+
 ## Running the scripts
 
 Will put more in here later.  But for now, it looks like:
