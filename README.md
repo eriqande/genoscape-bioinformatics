@@ -1,5 +1,6 @@
 genoscape-bioinformatics
 ================
+02 November, 2016
 
 -   [TODO](#todo)
 -   [Introduction](#introduction)
