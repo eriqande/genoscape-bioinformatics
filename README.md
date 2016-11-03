@@ -95,7 +95,24 @@ In order for this to work, we have to impose a specific file structure for each 
         READ2=rawdata/Silvereye-Plate1_S36_L005_R2_001.fastq.gz # paths relative to the Plate_1 directory.
         BC2COL=ZOLA-1-barcodes-2col.txt # The two column barcode file
         SHORTNAME=zola-1   # species dash plate number is good.  This is used for output later  
+        GENOME_DB=/u/home/k/kruegg/nobackup-klohmuel/References/bowtie2-ZOLAv0/ZOLAv0   # must be the ABSOLUTE path AND the prefix
         ```
+
+        I want to say a little more about these:
+        -   `PROGDEFS` should be given as an absolute path.
+        -   `READ1` and `READ2` can be given as paths relative to the `Plate_X` directory.
+        -   `BC2COL` should be the name of the file and it should be in the `Plate_X` directory.
+        -   `SHORTNAME` must have no spaces in it, and no special characters that don't work well in file names.
+        -   `GENOME_DB` gives the path and prefix for the indexed genome that you want to align to. This is something that you will create using, for example, `reference-genome-db-scripts/bowtie2-build-genome-database.sh`. I ran that in the directory `/u/home/k/kruegg/nobackup-klohmuel/References` and told it to name the data base `ZOLAv0`, so it put everything into `/u/home/k/kruegg/nobackup-klohmuel/References/bowtie2-ZOLAv0`. In particular, there are a lot of files like this:
+
+                ZOLAv0.1.bt2
+                ZOLAv0.4.bt2
+                ZOLAv0.2.bt2
+                ZOLAv0.rev.1.bt2
+                ZOLAv0.3.bt2
+                ZOLAv0.rev.2.bt2
+
+            Notice that their prefix is `ZOLAv0`. That has to be specified as part of the `GENOME_DB` variable. That is what the `ZOLAv0` is doing at the end of the `/u/home/k/kruegg/nobackup-klohmuel/References/bowtie2-ZOLAv0/ZOLAv0`. Note also, `GENOME_DB` must be an absolute path!! Don't specify it like `../References/bowtie2-ZOLAv0/ZOLAv`.
 
 Here is an example of what the directory structure looks like once we have downloaded two plates of ZOLA data:
 
@@ -130,12 +147,12 @@ These are all scripts that should be run inside the `References` directory that 
 
 Currently there is only one script: `reference-genome-db-scripts/bowtie2-build-genome-database.sh` It uses `bowtie2-build` which you can read about [here](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#the-bowtie2-build-indexer).
 
-Here is an example of how it was used to create a DB for the *Zosterops* genome. Note that I had downloaded the *Zosterops* genome from NCBI, then I gunzipped it (that is important) and put it in the `Genome` directory inside the `ZOLA` directory.
+Here is an example of how it was used to create a DB for the *Zosterops* genome. Note that I had downloaded the *Zosterops* genome from NCBI, then I gunzipped it (that is important) and put it in the `Genome` directory inside the `ZOLA` directory. Note that you can use a relative path to the genome file, if desired. However, remember, always use **absolute paths** for things in the `data-defs.sh` file!
 
 ``` sh
 [kruegg@login3 References]$ pwd
 /u/home/k/kruegg/nobackup-klohmuel/References
-[kruegg@login3 References]$ qsub ~/genoscape-bioinformatics/reference-genome-db-scripts/bowtie-build-genome-database.sh ../ZOLA/Genome/GCA_001281735.1_ASM128173v1_genomic.fna  ZOLAv0
+[kruegg@login3 References]$ qsub ~/genoscape-bioinformatics/reference-genome-db-scripts/bowtie2-build-genome-database.sh ../ZOLA/Genome/GCA_001281735.1_ASM128173v1_genomic.fna  ZOLAv0
 ```
 
 This takes about half an hour and creates all the contents in the directory `/u/home/k/kruegg/nobackup-klohmuel/References/bowtie2-ZOLAv0`, including `README.txt` which tells us this:

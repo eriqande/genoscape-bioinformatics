@@ -51,7 +51,13 @@ OutputPrefix=$2
 module load bowtie2
 
 
-FASTA_ABS=$(readlink -f $FASTA)
+if [ $(uname -a | awk '{print $1}') == "Darwin" ]; then
+  FASTA_ABS=$(fp $FASTA)  # this is just here to test on my laptop.  Most people will not have fp. But Mac does not have readlink -f
+else
+  FASTA_ABS=$(readlink -f $FASTA)
+fi
+
+
 
 mkdir bowtie2-$OutputPrefix
 cd bowtie2-$OutputPrefix
