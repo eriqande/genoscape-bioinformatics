@@ -53,3 +53,16 @@ awk '
 ' Logs/clone_filter_report.stdout > Logs/clone_count_data_frame.txt
 
 
+
+# now here is a super sketchy thing that we have to do because the 
+# old version of stacks we are using writes files out with f&^%ked up 
+# names that have a ".fil." in them. That doesn't happen with the
+# new version of stacks.  So we just have to move them to a file named
+# the way we want it for later (and the way we will get it with newer
+# versions of stacks)
+cd dupfiltered
+for i in *fq.fil.fq*; 
+do  
+  j=$(echo $i | awk -F"." '{printf("%s.%d.%d.fq.gz", $1, $2, $2);}'); 
+  mv $i $j; 
+done

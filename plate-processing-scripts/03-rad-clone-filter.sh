@@ -40,6 +40,8 @@ cd demultiplexed
 for sample in `ls *.1.fq.gz | cut -f1 -d'.'`
 do
   $CLONE_FILTER -1 $sample.1.fq.gz -2 $sample.2.fq.gz -i gzfastq -o ../dupfiltered >> ../dupfiltered/clone_filter_report.stdout 2>&1
+  
+  # note that this line can be removed after we go to the newer version of stacks
   gzip ../dupfiltered/$sample.1.fq.fil.fq_1     ../dupfiltered/$sample.2.fq.fil.fq_2  # gzip the results right after they are made
 done
 
