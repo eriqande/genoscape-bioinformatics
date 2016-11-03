@@ -136,7 +136,21 @@ executed. _Now info about each script and its output here_
 
 
 
-## Reference Genome Scripts
+## Reference Genome Data Base Scripts
+If you have a genome.  Then typically you are going to to need to index it or otherwise create
+a database from it in order to align sequence to it.  This process is distinct from the process
+of actually assembling a genome for a species.  Because you might want to align sequence from one
+species against the genome of different species, it doesn't make a lot of sense to store the indexed
+genome data bases just with the species itself.  So, we are going to follow Rachael's lead here in 
+recommending that the user maintain a directory called `Reference`, within which will be 
+a series of directories that include the genome data bases.  
+
+We have a few different scripts that help the process of creating these genome data bases in
+a way that things are organized and it is clear what the original genome used was, etc.
+
+Unlike the plate processing scripts, which use the  `data-defs.sh` file to specify its 
+input, these scripts take command line arguments.  
+
 These are all scripts that should be run inside the `Reference` directory that goes at the top
 level of the species directory.
 
