@@ -5,7 +5,7 @@
 #$ -o bowtie2-build-db.log
 #$ -e bowtie2-build-db.error
 #$ -pe shared 1
-#$ -l highp,h_data=8G,time=1:20:00
+#$ -l highp,h_data=8G,time=0:50:00
 #$ -M eric.anderson@noaa.gov
 #$ -m bea
 

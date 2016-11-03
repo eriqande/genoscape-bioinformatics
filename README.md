@@ -1,13 +1,13 @@
 genoscape-bioinformatics
 ================
-02 November, 2016
+03 November, 2016
 
 -   [TODO](#todo)
 -   [Introduction](#introduction)
 -   [Installation](#installation)
 -   [Directory Structure](#directory-structure)
 -   [Plate Processing Scripts](#plate-processing-scripts)
--   [Reference Genome Scripts](#reference-genome-scripts)
+-   [Reference Genome DB Scripts](#reference-genome-db-scripts)
 -   [Running the scripts](#running-the-scripts)
 -   [Eric's notes to himself](#erics-notes-to-himself)
 
@@ -45,6 +45,10 @@ Simple. Clone the repository and then check the paths to the programs and modify
         FASTQC=/u/nobackup/klohmuel/kruegg/bin/FastQC/fastqc
         PROC_RADTAGS=/u/nobackup/klohmuel/kruegg/bin/stacks-1.32/process_radtags
         CLONE_FILTER=/u/nobackup/klohmuel/kruegg/bin/stacks-1.32/clone_filter
+
+        # this can be obtained by, for example: 
+        #  wget https://github.com/broadinstitute/picard/releases/download/2.7.1/picard.jar
+        PICARD_JAR=/u/home/k/kruegg/nobackup-klohmuel/bin/picard.jar
 
 
         # deal with MacOS's lameness re: zcat.  Users should not have to 
@@ -113,18 +117,33 @@ Plate Processing Scripts
 
 The plate processing scripts in this repository (i.e. those in `plate-processing-scripts`) all operate on data at the Plate level which is why we have set the directory structure up as we have. Each script creates output in a new directory within the `Plate_X` directory in which it gets executed. *Now info about each script and its output here*
 
-Reference Genome Scripts
-------------------------
+Reference Genome DB Scripts
+---------------------------
 
-These are all scripts that should be run inside the `Reference` directory that goes at the top level of the species directory.
+If you have a genome. Then typically you are going to to need to index it or otherwise create a database from it in order to align sequence to it. This process is distinct from the process of actually assembling a genome for a species. Because you might want to align sequence from one species against the genome of a different species, it doesn't make a lot of sense to store the indexed genome data bases within the species directory itself. So, we are going to follow Rachael's lead here in recommending that the user maintain a directory called `References`, within which will be a series of directories that include the genome data bases.
 
-They require a `reference-defs.sh` file there that gives the path to programs and also some other things, like the fasta.gz for the genome and a short name for the genome. For example:
+We have a few different scripts that help the process of creating these genome data bases in a way that things are organized and it is clear what the original genome used was, etc.
+
+Unlike the plate processing scripts, which use the `data-defs.sh` file to specify its input, these scripts take command line arguments.
+
+These are all scripts that should be run inside the `References` directory that goes at the top level of the species directory.
+
+Currently there is only one script: `reference-genome-db-scripts/bowtie2-build-genome-database.sh` It uses `bowtie2-build` which you can read about [here](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#the-bowtie2-build-indexer).
+
+Here is an example of how it was used to create a DB for the *Zosterops* genome. Note that I had downloaded the *Zosterops* genome from NCBI, then I gunzipped it (that is important) and put it in the `Genome` directory inside the `ZOLA` directory.
 
 ``` sh
-PROGDEFS=/u/home/k/kruegg/genoscape-bioinformatics/program-defs.sh  # file that defines the paths. 
-GENOME_FASTA_GZ=GCA_001281735.1_ASM128173v1_genomic.fna.gz  # zosterops genome (fasta, gzipped)
-GENOME_OUTNAME=ZOLAv0  # name to give the directory where the genome data base will go.
+[kruegg@login3 References]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/References
+[kruegg@login3 References]$ qsub ~/genoscape-bioinformatics/reference-genome-db-scripts/bowtie-build-genome-database.sh ../ZOLA/Genome/GCA_001281735.1_ASM128173v1_genomic.fna  ZOLAv0
 ```
+
+This takes about half an hour and creates all the contents in the directory `/u/home/k/kruegg/nobackup-klohmuel/References/bowtie2-ZOLAv0`, including `README.txt` which tells us this:
+
+    Created Thu Nov  3 03:56:37 PDT 2016,  by running  bowtie2-build-genome-database.sh script with arguments:
+            FASTA: ../ZOLA/Genome/GCA_001281735.1_ASM128173v1_genomic.fna
+            AbsolutePath: /u/nobackup/klohmuel/kruegg/ZOLA/Genome/GCA_001281735.1_ASM128173v1_genomic.fna
+            OutputPrefix: ZOLAv0
 
 Running the scripts
 -------------------
