@@ -49,6 +49,6 @@ do
 	--rg-id $ID --rg SM:$sample --rg LB:$PLATE \
 	--rg PU:$PLATE --rg PL:illumina  2> ../$REPORTOUTDIR/$ID  | \
 	samtools view -bhS - | \
-	samtools sort -  > ../$BAMOUTDIR/$ID
+	samtools sort -  ../$BAMOUTDIR/$ID     # 	with newer version of samtools you need this:  samtools sort -  > ../$BAMOUTDIR/$ID.bam
 done
 
