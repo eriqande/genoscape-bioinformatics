@@ -2,14 +2,14 @@ Notes while processing *Zosterops lateralis* RAD reads
 ================
 04 November, 2016
 
--   [Notes on Except Steps in the Processing](#notes-on-except-steps-in-the-processing)
+-   [Notes on Exact Steps in the Processing](#notes-on-exact-steps-in-the-processing)
 -   [Reads with "more read characters than quality values" during bowtie mapping](#reads-with-more-read-characters-than-quality-values-during-bowtie-mapping)
     -   [Looking at Plate\_2:](#looking-at-plate_2)
     -   [Looking at Plate\_1](#looking-at-plate_1)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-Notes on Except Steps in the Processing
----------------------------------------
+Notes on Exact Steps in the Processing
+--------------------------------------
 
 Ultimately, this is where I would like to put a detailed, easy to follow listing of the actual commands used....Of course, I launched most of the steps before I actually started this document.
 

@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-## Notes on Except Steps in the Processing
+## Notes on Exact Steps in the Processing
 Ultimately, this is where I would like to put a detailed, easy to follow
 listing of the actual commands used....Of course, I launched most of the 
 steps before I actually started this document.
