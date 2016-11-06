@@ -5,7 +5,7 @@
 #$ -o fastqc.log
 #$ -e fastqc.error
 #$ -pe shared 1
-#$ -l highp,h_data=2G,time=1:20:00
+#$ -l highp,h_data=4G,time=3:00:00
 #$ -M eric.anderson@noaa.gov
 #$ -m bea
 
