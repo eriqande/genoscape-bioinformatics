@@ -1,4 +1,6 @@
 #!/bin/bash
+
+# Here are directives for the UGE system at UCLA (ignored by Oxford's system)
 #$ -cwd
 #$ -V
 #$ -N fastqc
@@ -9,6 +11,18 @@
 #$ -M eric.anderson@noaa.gov
 #$ -m bea
 
+# here are directives for the SLURM system at Oxford (ignored by UCLA's system)
+#PBS -l select=1:mpiprocs=1 
+#PBS -l walltime=10:00:00
+#PBS -N 01fastqc
+#PBS -m bea
+#PBS -M ashley.cook@zoo.ox.ac.uk
+#PBS -V
+#PBS -o fastqc.log
+#PBS -e fastqc.error
+
+
+
 # This should be run from the top level of the Plate_X directory
 # using qsub.  i.e. qsub ~/genoscape-bioinformatics/plate-processing-scripts/01-fastqc.sh
 
@@ -16,6 +30,9 @@
 
 source data-defs.sh 
 source $PROGDEFS
+
+source $MODULE_SOURCE
+module load java  # needed on the Oxford cluster
 
 
 # make necessary output directories

@@ -1,4 +1,6 @@
 
+# this is the path to the file to source to get the module command
+MODULE_SOURCE=/u/local/Modules/default/init/modules.sh
 
 FASTQC=/u/nobackup/klohmuel/kruegg/bin/FastQC/fastqc
 PROC_RADTAGS=/u/nobackup/klohmuel/kruegg/bin/stacks-1.32/process_radtags
