@@ -1,6 +1,6 @@
 genoscape-bioinformatics
 ================
-03 November, 2016
+06 November, 2016
 
 -   [TODO](#todo)
 -   [Introduction](#introduction)
@@ -41,6 +41,8 @@ Simple. Clone the repository and then check the paths to the programs and modify
 2.  Check out the file `program-defs.sh` in the top level of the directory. This is an example of how you would specify paths for all the different programs that are to be used (but which don't live in this repository, itself). (Of course, some, like `awk` and `perl` are just assumed to be on your $PATH already.). The file as it arrives with the repo looks like this:
 
 
+        # this is the path to the file to source to get the module command
+        MODULE_SOURCE=/u/local/Modules/default/init/modules.sh
 
         FASTQC=/u/nobackup/klohmuel/kruegg/bin/FastQC/fastqc
         PROC_RADTAGS=/u/nobackup/klohmuel/kruegg/bin/stacks-1.32/process_radtags
