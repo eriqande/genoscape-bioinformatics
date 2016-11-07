@@ -43,8 +43,6 @@ mkdir fastqc_reports/logs
 $ZCAT  $READ1 | $FASTQC stdin
 
 # move output to output directory while renaming it
-mv fastqc.error fastqc_reports/logs/$(basename $READ1)_fastqc.error
-mv fastqc.log fastqc_reports/logs/$(basename $READ1)_fastqc.log
 mv stdin_fastqc.html fastqc_reports/fastqc_report_$(basename $READ1).html
 rm stdin_fastqc.zip
 
@@ -52,9 +50,12 @@ rm stdin_fastqc.zip
 $ZCAT  $READ2 | $FASTQC stdin
 
 # move output to output directory while renaming it
-mv fastqc.error fastqc_reports/logs/$(basename $READ2)_fastqc.error
-mv fastqc.log fastqc_reports/logs/$(basename $READ2)_fastqc.log
 mv stdin_fastqc.html fastqc_reports/fastqc_report_$(basename $READ2).html
 rm stdin_fastqc.zip
+
+
+# move the qsub logs too
+mv fastqc.error fastqc_reports/logs/
+mv fastqc.log fastqc_reports/logs/
 
 
