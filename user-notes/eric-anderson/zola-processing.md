@@ -1,11 +1,12 @@
 Notes while processing *Zosterops lateralis* RAD reads
 ================
-04 November, 2016
+07 November, 2016
 
 -   [Notes on Exact Steps in the Processing](#notes-on-exact-steps-in-the-processing)
 -   [Reads with "more read characters than quality values" during bowtie mapping](#reads-with-more-read-characters-than-quality-values-during-bowtie-mapping)
     -   [Looking at Plate\_2:](#looking-at-plate_2)
     -   [Looking at Plate\_1](#looking-at-plate_1)
+    -   [Aha! The `process_radtags` must have crapped out at some point](#aha-the-process_radtags-must-have-crapped-out-at-some-point)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 Notes on Exact Steps in the Processing
@@ -241,3 +242,29 @@ Here we just confirm that no such error occurred in the mapping of Plate\_1:
 ```
 
 So, it is clearly a problem with Plate2
+
+### Aha! The `process_radtags` must have crapped out at some point
+
+If I look in the `demultiplex` directory for Plate\_2 I find that `zcat` fails with an unexpected end of file. It appears that every file is corrupted. It may be that this job was running when we ran out of space on the disk, or perhaps it got killed halfway through. At any rate, it leaves partial records at the end like this:
+
+``` sh
+[kruegg@login4 demultiplexed]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/Plate_2_first_attempt/demultiplexed
+[kruegg@login4 demultiplexed]$ zcat 12-067.2.fq.gz | tail -n 10 
+
+gzip: 12-067.2.fq.gz: unexpected end of file
++
+AAFFFAJJJJJJJJJJJJJFJJJJJJJJJJJJJJJJJJJJJFJ7JJJJFJJJJFJJJJJ<JJJJJJJJFJJJJJJJJJJFJJJJJJJJJJJJJJJJJJFFJFJJFJJFJJJJJJJJJJJJJFJJJJJJJFAJFFJJJAJJJJJJJJ7AJJ
+@3_2208_22424_48368_2
+CAGTACAGCAAAATATATCCAAGGAAACTTTTAGCTAAAAATCATATTTCACACAAAAGTGATTAAAGAACAACACTAAATACTTCTGTAGCTTTTTTAGATTTACAGTAGGTAACACTAACTAACCTTTCTTTTCAGGACCTAAAAAGA
++
+<AAFFJJFJJJJJJJJJJFFFFFAFFJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJFJJJFFJJJJJJJJJJJJJJJJJJJJJJJJJJJJFJJJJFJJFJJJJJJFJJJJJJJJAJJJJA<A<7AFJFJFJJF<
+@3_2208_30573_48386_2
+CCTCAAGGGCATCACAGCATGTTCTTGTGCAGTGCAATTTTACATAGTTCAACTGTCAATATTTAGCAAAAGCATACAGGCAAAAGAGCGAGGAAAGTATGTTGCAAGAATGGGATCTTCATAGTGTACACTTAAATCCCAAACAGTTAA
++
+AA<FFFJFJJJF-FFFJJJJJJJJJJJFFJJJJJFJJJJJ-FJJFJJJJ-<JJJ-
+```
+
+When the unexpected break occurs in the middle of the quality scores, then it causes problems later on.
+
+OK, let's see how things turn out once we re-run this.

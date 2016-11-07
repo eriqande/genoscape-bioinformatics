@@ -1,6 +1,6 @@
 Step-by-step *Zosterops* Plate 2
 ================
-06 November, 2016
+07 November, 2016
 
 -   [Introduction](#introduction)
 -   [Download the data and move it where it needs to go (~ 1 hr)](#download-the-data-and-move-it-where-it-needs-to-go-1-hr)
@@ -9,9 +9,11 @@ Step-by-step *Zosterops* Plate 2
     -   [Remove the temporary download directory](#remove-the-temporary-download-directory)
     -   [A brief digression](#a-brief-digression)
 -   [Set up the `data-defs.sh` and barcodes file](#set-up-the-data-defs.sh-and-barcodes-file)
--   [Run `fastqc` on it (~ 1 hr)](#run-fastqc-on-it-1-hr)
+-   [Run `fastqc` on it (~ 2 hr)](#run-fastqc-on-it-2-hr)
     -   [First run fastqc using the script provided](#first-run-fastqc-using-the-script-provided)
     -   [Copy the results back to your own machine to view](#copy-the-results-back-to-your-own-machine-to-view)
+-   [Flip, Trim, and demultiplex, for the Best-RAD process](#flip-trim-and-demultiplex-for-the-best-rad-process)
+    -   [Start the job](#start-the-job)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 Introduction
@@ -19,10 +21,13 @@ Introduction
 
 Here I will try to faithfully record the whole process I went through to analyse the *Zosterops* RAD data using the scripts in in [genoscape-bioinformatics](https://github.com/eriqande/genoscape-bioinformatics).
 
-Let's see how it goes.
+Let's see how it goes. For each step, I list the "prep" time, which is how long things take (if there are no problems) to actually interact with the terminal. The "cook" time is how long the computation takes once the job is submitted.
 
 Download the data and move it where it needs to go (~ 1 hr)
 -----------------------------------------------------------
+
+*Prep Time: 10 minutes*
+*Cook Time: 60 minutes*
 
 ### Download with wget
 
@@ -97,6 +102,9 @@ So, it is exactly identical to what it was last time...
 Set up the `data-defs.sh` and barcodes file
 -------------------------------------------
 
+*Prep Time: 25 minutes. Take time to double check everything and make sure that you have it all right. Check with the [directory structure specifications](https://github.com/eriqande/genoscape-bioinformatics#directory-structure) and the [progdefs specifications](https://github.com/eriqande/genoscape-bioinformatics#installation) to make sure that you are using the most current specs.*
+*Cook Time: 0 minutes*
+
 We are going to be working in `/u/home/k/kruegg/nobackup-klohmuel/ZOLA/Plate_2` and that is where we need to make our file called `data-defs.sh`. This is what it looks like:
 
 ``` sh
@@ -133,8 +141,10 @@ rawdata:
 laneBarcode.html  Silvereye-Plate2_S86_L003_R1_001.fastq.gz  Silvereye-Plate2_S86_L003_R2_001.fastq.gz
 ```
 
-Run `fastqc` on it (~ 1 hr)
+Run `fastqc` on it (~ 2 hr)
 ---------------------------
+
+*Prep Time: 20 minutes (includes scanning the reports)* *Cook Time: 2 hours*
 
 ### First run fastqc using the script provided
 
@@ -170,4 +180,41 @@ Now it is in state "r" for running.
 
 ### Copy the results back to your own machine to view
 
-The results are html files which are most easily viewed by copying them to your own computer and opening them in a browser.
+Once that has finished (in about 2 hours) the results are html files which are most easily viewed by copying them to your own computer and opening them in a browser.
+
+``` sh
+2016-11-07 02:13 /Desktop/--% scp -r  kruegg@hoffman2.idre.ucla.edu:/u/home/k/kruegg/nobackup-klohmuel/ZOLA/Plate_2/fastqc_reports ./
+kruegg@hoffman2.idre.ucla.edu's password: 
+Silvereye-Plate2_S86_L003_R1_001.fastq.gz_fas 100%  166     0.2KB/s   00:00    
+Silvereye-Plate2_S86_L003_R1_001.fastq.gz_fas 100%   56     0.1KB/s   00:01    
+fastqc_report_Silvereye-Plate2_S86_L003_R1_00 100%  309KB 308.9KB/s   00:01    
+fastqc_report_Silvereye-Plate2_S86_L003_R2_00 100%  305KB 305.4KB/s   00:01    
+```
+
+Then just double click them to open the reports in your browser.
+
+Flip, Trim, and demultiplex, for the Best-RAD process
+-----------------------------------------------------
+
+*Prep Time: 5 minutes*
+*Cook Time: *
+
+### Start the job
+
+Just cd to the `Plate_2` directory and launch it.
+
+``` sh
+[kruegg@login4 Plate_2]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/Plate_2
+[kruegg@login4 Plate_2]$ date
+Mon Nov  7 02:34:24 PST 2016
+[kruegg@login4 Plate_2]$ qsub ~/genoscape-bioinformatics/plate-processing-scripts/02-rad-flip-trim-and-demultiplex.sh 
+JSV: PE=shared
+Your job 1047166 ("demultiplex") has been submitted
+
+# check to make sure it is in the queue
+[kruegg@login4 Plate_2]$ myjobs
+job-ID  prior   name       user         state submit/start at     queue                          slots ja-task-ID 
+-----------------------------------------------------------------------------------------------------------------
+1047166 0.00000 demultiple kruegg       qw    11/07/2016 02:34:40                                    1        
+```
