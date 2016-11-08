@@ -5,9 +5,14 @@
 #$ -o demultiplex.log
 #$ -e demultiplex.error
 #$ -pe shared 1
-#$ -l highp,h_data=8G,time=20:00:00
+#$ -l highp,h_data=8G,time=80:00:00
 #$ -M eric.anderson@noaa.gov
 #$ -m bea
+
+# Note.  It should take well under 30 hours for this to run on Hoffman, but 
+# the trogolodytes that run the cluster kill your process if it runs over at all,
+# so I just give it way more time than it might need.  Takes longer to queue, but that
+# is better than completely losing a days worth of computation.
 
 # note that the -o and -e directives above seem important to keep the script
 # from trying to write to a default output location that it is unable to write to
