@@ -199,9 +199,9 @@ fastqc_report_Silvereye-Plate2_S86_L003_R2_00 100%  305KB 305.4KB/s   00:01
 Then just double click them to open the reports in your browser.
 
 
-## Flip, Trim, and demultiplex, for the Best-RAD process
+## Flip, Trim, and demultiplex, for the Best-RAD process (~ 1 day)
 _Prep Time: 5 minutes_  
-_Cook Time: _
+_Cook Time: About 24 hours_  
 
 ### Start the job
 Just cd to the `Plate_2` directory and launch it.
@@ -221,3 +221,22 @@ job-ID  prior   name       user         state submit/start at     queue         
 1047166 0.00000 demultiple kruegg       qw    11/07/2016 02:34:40                                    1        
 ```
 
+And, then about a day later it is done...
+
+## Filter out PCR duplicates
+_Prep Time: 2 minutes_  
+_Cook Time: ? hours_
+
+This is a quick script that relies on STACKS clone filter.
+
+### Start the job
+Just cd to the `Plate_2` directory and launch it
+```{sh, eval=FALSE}
+[kruegg@login1 Plate_2]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/Plate_2
+[kruegg@login1 Plate_2]$ date
+Wed Nov  9 03:32:20 PST 2016
+[kruegg@login1 Plate_2]$ qsub ~/genoscape-bioinformatics/plate-processing-scripts/03-rad-clone-filter.sh 
+JSV: PE=shared
+Your job 1067345 ("clone_filter") has been submitted
+```

@@ -1,6 +1,6 @@
 Step-by-step *Zosterops* Plate 2
 ================
-07 November, 2016
+09 November, 2016
 
 -   [Introduction](#introduction)
 -   [Download the data and move it where it needs to go (~ 1 hr)](#download-the-data-and-move-it-where-it-needs-to-go-1-hr)
@@ -12,7 +12,7 @@ Step-by-step *Zosterops* Plate 2
 -   [Run `fastqc` on it (~ 2 hr)](#run-fastqc-on-it-2-hr)
     -   [First run fastqc using the script provided](#first-run-fastqc-using-the-script-provided)
     -   [Copy the results back to your own machine to view](#copy-the-results-back-to-your-own-machine-to-view)
--   [Flip, Trim, and demultiplex, for the Best-RAD process](#flip-trim-and-demultiplex-for-the-best-rad-process)
+-   [Flip, Trim, and demultiplex, for the Best-RAD process (~ 1 day)](#flip-trim-and-demultiplex-for-the-best-rad-process-1-day)
     -   [Start the job](#start-the-job)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -193,11 +193,11 @@ fastqc_report_Silvereye-Plate2_S86_L003_R2_00 100%  305KB 305.4KB/s   00:01
 
 Then just double click them to open the reports in your browser.
 
-Flip, Trim, and demultiplex, for the Best-RAD process
------------------------------------------------------
+Flip, Trim, and demultiplex, for the Best-RAD process (~ 1 day)
+---------------------------------------------------------------
 
 *Prep Time: 5 minutes*
-*Cook Time: *
+*Cook Time: About 24 hours*
 
 ### Start the job
 
