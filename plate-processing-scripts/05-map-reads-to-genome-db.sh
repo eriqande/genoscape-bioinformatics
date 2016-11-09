@@ -14,7 +14,7 @@ source data-defs.sh
 source $PROGDEFS
 
 
-. /u/local/Modules/default/init/modules.sh
+source $MODULE_SOURCE
 module load samtools
 module load bowtie2
 
