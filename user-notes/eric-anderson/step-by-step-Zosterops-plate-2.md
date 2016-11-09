@@ -14,6 +14,11 @@ Step-by-step *Zosterops* Plate 2
     -   [Copy the results back to your own machine to view](#copy-the-results-back-to-your-own-machine-to-view)
 -   [Flip, Trim, and demultiplex, for the Best-RAD process (~ 1 day)](#flip-trim-and-demultiplex-for-the-best-rad-process-1-day)
     -   [Start the job](#start-the-job)
+-   [Filter out PCR duplicates](#filter-out-pcr-duplicates)
+    -   [Start the job](#start-the-job-1)
+-   [Clean up stuff](#clean-up-stuff)
+-   [Prepare and index the genome](#prepare-and-index-the-genome)
+-   [Map the reads to the genome data base](#map-the-reads-to-the-genome-data-base)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 Introduction
@@ -217,4 +222,68 @@ Your job 1047166 ("demultiplex") has been submitted
 job-ID  prior   name       user         state submit/start at     queue                          slots ja-task-ID 
 -----------------------------------------------------------------------------------------------------------------
 1047166 0.00000 demultiple kruegg       qw    11/07/2016 02:34:40                                    1        
+```
+
+And, then about a day later it is done...
+
+Filter out PCR duplicates
+-------------------------
+
+*Prep Time: 2 minutes*
+*Cook Time: 9 hours*
+
+This is a quick script that relies on STACKS clone filter.
+
+### Start the job
+
+Just cd to the `Plate_2` directory and launch it
+
+``` sh
+[kruegg@login1 Plate_2]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/Plate_2
+[kruegg@login1 Plate_2]$ date
+Wed Nov  9 03:32:20 PST 2016
+[kruegg@login1 Plate_2]$ qsub ~/genoscape-bioinformatics/plate-processing-scripts/03-rad-clone-filter.sh 
+JSV: PE=shared
+Your job 1067345 ("clone_filter") has been submitted
+```
+
+Clean up stuff
+--------------
+
+Just a quick script to move and rename a few things. Not compute intensive so it does not need to be run under `qusb`
+
+``` sh
+[kruegg@login1 Plate_2]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/Plate_2
+[kruegg@login1 Plate_2]$ ~/genoscape-bioinformatics/plate-processing-scripts/04-clean-up-and-organize.sh 
+```
+
+Prepare and index the genome
+----------------------------
+
+I will discuss this later, as I already did it a while ago
+
+Map the reads to the genome data base
+-------------------------------------
+
+*Prep Time: 5 minutes*
+*Cook Time: ? hours*
+
+This just involves starting up the script:
+
+``` sh
+[kruegg@login1 Plate_2]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/Plate_2
+[kruegg@login1 Plate_2]$ date
+Wed Nov  9 14:30:17 PST 2016
+[kruegg@login1 Plate_2]$ qsub ~/genoscape-bioinformatics/plate-processing-scripts/05-map-reads-to-genome-db.sh 
+JSV: PE=shared
+Your job 1075046 ("radMap") has been submitted
+[kruegg@login1 Plate_2]$ 
+[kruegg@login1 Plate_2]$ 
+[kruegg@login1 Plate_2]$ myjobs
+job-ID  prior   name       user         state submit/start at     queue                          slots ja-task-ID 
+-----------------------------------------------------------------------------------------------------------------
+1075046 0.00000 radMap     kruegg       qw    11/09/2016 14:30:34                                    8        
 ```
