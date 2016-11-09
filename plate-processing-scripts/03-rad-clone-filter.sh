@@ -5,7 +5,7 @@
 #$ -o clone_filter.log
 #$ -e clone_filter.error
 #$ -pe shared 1
-#$ -l highp,h_data=16G,time=20:00:00
+#$ -l highp,h_data=16G,time=40:00:00
 #$ -M eric.anderson@noaa.gov
 #$ -m bea
 
