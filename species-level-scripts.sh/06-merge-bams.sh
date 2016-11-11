@@ -1,11 +1,11 @@
 #!/bin/bash
 #$ -cwd
 #$ -V
-#$ -N test_merge
-#$ -o test_merge.log
-#$ -e test_merge.error
+#$ -N merge-bams
+#$ -o merge-bams.log
+#$ -e merge-bams.error
 #$ -pe shared 1
-#$ -l highp,h_data=4G,time=10:00:00
+#$ -l highp,h_data=8G,time=10:00:00
 #$ -M eric.anderson@noaa.gov
 #$ -m bea
 
