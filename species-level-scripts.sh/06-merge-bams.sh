@@ -5,7 +5,7 @@
 #$ -o merge-bams.log
 #$ -e merge-bams.error
 #$ -pe shared 1
-#$ -l highp,h_data=8G,time=10:00:00
+#$ -l h_data=4G,time=10:00:00
 #$ -M eric.anderson@noaa.gov
 #$ -m bea
 
@@ -82,4 +82,4 @@ if [ ! -d MergedBams ]; then
  mkdir MergedBams
 fi
 
-java -Xmx4G -jar $PICARD_JAR MergeSamFiles $BAM_COMMS  OUTPUT=MergedBams/${GENOME_DIR}-merged.bam  SORT_ORDER=coordinate
+java -Xmx2G -jar $PICARD_JAR MergeSamFiles $BAM_COMMS  OUTPUT=MergedBams/${GENOME_DIR}-merged.bam  SORT_ORDER=coordinate
