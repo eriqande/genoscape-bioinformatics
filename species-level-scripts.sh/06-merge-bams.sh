@@ -5,7 +5,7 @@
 #$ -o merge-bams.log
 #$ -e merge-bams.error
 #$ -pe shared 1
-#$ -l h_data=4G,time=10:00:00
+#$ -l h_data=5G,time=10:00:00
 #$ -M eric.anderson@noaa.gov
 #$ -m bea
 
