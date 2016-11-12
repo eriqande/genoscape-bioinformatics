@@ -1,6 +1,6 @@
 Step-by-step *Zosterops* Plate 2
 ================
-09 November, 2016
+11 November, 2016
 
 -   [Introduction](#introduction)
 -   [Download the data and move it where it needs to go (~ 1 hr)](#download-the-data-and-move-it-where-it-needs-to-go-1-hr)
@@ -19,6 +19,7 @@ Step-by-step *Zosterops* Plate 2
 -   [Clean up stuff](#clean-up-stuff)
 -   [Prepare and index the genome](#prepare-and-index-the-genome)
 -   [Map the reads to the genome data base](#map-the-reads-to-the-genome-data-base)
+-   [Merge the bams from Plate\_1 and Plate\_2](#merge-the-bams-from-plate_1-and-plate_2)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 Introduction
@@ -268,7 +269,7 @@ Map the reads to the genome data base
 -------------------------------------
 
 *Prep Time: 5 minutes*
-*Cook Time: ? hours*
+*Cook Time: 8 hours wallclock on Hoffman. 2 days of CPU time*
 
 This just involves starting up the script:
 
@@ -286,4 +287,49 @@ Your job 1075046 ("radMap") has been submitted
 job-ID  prior   name       user         state submit/start at     queue                          slots ja-task-ID 
 -----------------------------------------------------------------------------------------------------------------
 1075046 0.00000 radMap     kruegg       qw    11/09/2016 14:30:34                                    8        
+```
+
+Merge the bams from Plate\_1 and Plate\_2
+-----------------------------------------
+
+This is a "species-level" operation...
+
+``` sh
+# see that I am at the top level of the ZOLA directory
+[kruegg@login2 ZOLA]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA
+
+# here are the directories in here:
+[kruegg@login2 ZOLA]$ ls
+Genome  Plate_1  Plate_2
+
+# note that each plate has an alignments directory with ZOLAv0 in it
+[kruegg@login2 ZOLA]$ ls Plate_1/alignments Plate_2/alignments
+Plate_1/alignments:
+ZOLAv0
+
+Plate_2/alignments:
+ZOLAv0
+
+# here is that help for 06:
+[kruegg@login2 ZOLA]$~/Documents/git-repos/genoscape-bioinformatics/species-level-scripts.sh/06-merge-bams.sh -h 
+
+Syntax:
+  06-merge-bams.sh  AlignDir  PlateOne PlateTwo PlateThree ...
+
+      Alignment:  The name of the alignment directories inside each of the Plate 
+          directories, inside of which is are the bam directories that hold all 
+          the bam files. For example, ZOLAv0.
+      PlateOne ... The names of the directories holding all the aligned bams from 
+          each of the plates.  For example, if you have done three plates it might
+          be "Plate_1 Plate_2 PLate_3"
+
+
+[kruegg@login2 ZOLA]$ date
+Fri Nov 11 12:30:05 PST 2016
+
+# let's give it a whirl
+[kruegg@login4 ZOLA]$ qsub ~/genoscape-bioinformatics/species-level-scripts.sh/06-merge-bams.sh ZOLAv0 Plate_1 Plate_2
+JSV: PE=shared
+Your job 1090852 ("merge-bams") has been submitted
 ```
