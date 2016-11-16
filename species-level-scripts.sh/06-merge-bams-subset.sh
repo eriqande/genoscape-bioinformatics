@@ -13,6 +13,7 @@ source ~/genoscape-bioinformatics/program-defs.sh
 source $MODULE_SOURCE
 
 module load java
+module load samtools
 
 
 
@@ -64,7 +65,7 @@ BAMPATHS=$2
 BAM_COMMS=$(awk '{printf("I=%s ", $0);}' $BAMPATHS)
 
 
-
+if [ -d FILENOTHERE ]; then 
 echo Going to process $BAM_COMMS
 
 if [ -e MergedBams/${PREFIX}-merged.bam ]; then
@@ -78,4 +79,9 @@ fi
 
 java -Xmx2G -jar $PICARD_JAR MergeSamFiles $BAM_COMMS  OUTPUT=MergedBams/${PREFIX}-merged.bam  SORT_ORDER=coordinate
 
+fi
 
+
+echo "Now indexing merged bam"
+
+samtools index MergedBams/${PREFIX}-merged.bam
