@@ -40,12 +40,17 @@ if [ $# -ne 1 ]; then
 fi
 
 
+source ~/genoscape-bioinformatics/program-defs.sh
+source $MODULE_SOURCE
+
+module load java
+module load samtools
+
+
+
 WorkDir=$(dirname $1)
 FASTA=$(basename $1)
 
-source $MODULE_SOURCE
-module load samtools
-module load java
 
 
 cd $WorkDir
