@@ -67,12 +67,6 @@ BAM_COMMS=$(awk '{printf("I=%s ", $0);}' $BAMPATHS)
 
 echo Going to process $BAM_COMMS
 
-exit;
-
-
-
-echo Going to process $BAM_COMMS
-
 if [ -e MergedBams/${PREFIX}-merged.bam ]; then
   echo "File MergedBams/${PREFIX}-merged.bam already exists.  Move it somewhere else.  Exiting... "
   exit 1
