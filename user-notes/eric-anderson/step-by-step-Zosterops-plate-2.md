@@ -1,6 +1,6 @@
 Step-by-step *Zosterops* Plate 2
 ================
-11 November, 2016
+16 November, 2016
 
 -   [Introduction](#introduction)
 -   [Download the data and move it where it needs to go (~ 1 hr)](#download-the-data-and-move-it-where-it-needs-to-go-1-hr)
@@ -20,6 +20,8 @@ Step-by-step *Zosterops* Plate 2
 -   [Prepare and index the genome](#prepare-and-index-the-genome)
 -   [Map the reads to the genome data base](#map-the-reads-to-the-genome-data-base)
 -   [Merge the bams from Plate\_1 and Plate\_2](#merge-the-bams-from-plate_1-and-plate_2)
+-   [Merge BAMs from a subset of individuals](#merge-bams-from-a-subset-of-individuals)
+-   [Index the genome fasta and create a dictionary](#index-the-genome-fasta-and-create-a-dictionary)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 Introduction
@@ -333,3 +335,50 @@ Fri Nov 11 12:30:05 PST 2016
 JSV: PE=shared
 Your job 1090852 ("merge-bams") has been submitted
 ```
+
+Merge BAMs from a subset of individuals
+---------------------------------------
+
+We are going to take 10 birds from the mainland and 10 from Heron Island and merge them to do some quick SNP calling as quickly as we can.
+
+Here are the full paths of the bams we want to merge. The CDH's are mainland birds and the others are Heron Island. I took the 10 that had the most seqence (largest bams).
+
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_2/alignments/ZOLAv0/bam/zola-2.CDH46.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_1/alignments/ZOLAv0/bam/zola-1.CDH18.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_1/alignments/ZOLAv0/bam/zola-1.CDH50.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_1/alignments/ZOLAv0/bam/zola-1.CDH48.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_1/alignments/ZOLAv0/bam/zola-1.CDH22.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_1/alignments/ZOLAv0/bam/zola-1.CDH20.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_1/alignments/ZOLAv0/bam/zola-1.CDH23.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_1/alignments/ZOLAv0/bam/zola-1.CDH24.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_1/alignments/ZOLAv0/bam/zola-1.CDH16.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_1/alignments/ZOLAv0/bam/zola-1.CDH49.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_1/alignments/ZOLAv0/bam/zola-1.12-052.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_1/alignments/ZOLAv0/bam/zola-1.12-064.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_1/alignments/ZOLAv0/bam/zola-1.12-068.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_1/alignments/ZOLAv0/bam/zola-1.12-061.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_2/alignments/ZOLAv0/bam/zola-2.12-066.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_2/alignments/ZOLAv0/bam/zola-2.12-053.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_2/alignments/ZOLAv0/bam/zola-2.12-051.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_2/alignments/ZOLAv0/bam/zola-2.12-049.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_2/alignments/ZOLAv0/bam/zola-2.12-060.bam
+    /u/nobackup/klohmuel/kruegg/ZOLA/Plate_2/alignments/ZOLAv0/bam/zola-2.12-050.bam
+
+I am going to put those in a file called `20_birds.txt` and then I will write script that will call it and merge the bam from it. That script is: `species-level-scripts.sh/06-merge-bams-subset.sh`
+
+Let's fire it off:
+
+``` sh
+[kruegg@login1 ZOLA]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA
+[kruegg@login1 ZOLA]$ date
+Wed Nov 16 06:10:02 PST 2016
+[kruegg@login1 ZOLA]$ qsub ~/genoscape-bioinformatics/species-level-scripts.sh/06-merge-bams-subset.sh twenty-birds-ZOLAv0 20-birds.txt 
+JSV: PE=shared
+Your job 1124228 ("merge-bam-subset") has been submitted
+```
+
+Index the genome fasta and create a dictionary
+----------------------------------------------
+
+Should be straightforward. Now that I can finally get an interactive shell, we will use that.
