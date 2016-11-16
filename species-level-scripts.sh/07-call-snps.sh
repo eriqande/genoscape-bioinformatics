@@ -4,8 +4,8 @@
 #$ -N call-snps
 #$ -o call-snps.log
 #$ -e call-snps.error
-#$ -pe shared 12
-#$ -l h_data=20G,time=336:00:00
+#$ -pe shared 16
+#$ -l highp,h_data=2G,time=200:00:00
 #$ -M eric.anderson@noaa.gov
 #$ -m bea
 
@@ -65,7 +65,7 @@ java -Xmx8G -jar $GATK_JAR -T HaplotypeCaller \
   -I $BAM \
   -stand_call_conf 20.0 -stand_emit_conf 20.0 \
   -o $OUTVCF --genotyping_mode DISCOVERY \
-  -nct 12
+  -nct 16
   
   
   
