@@ -10,6 +10,9 @@ CLONE_FILTER=/u/nobackup/klohmuel/kruegg/bin/stacks-1.32/clone_filter
 #  wget https://github.com/broadinstitute/picard/releases/download/2.7.1/picard.jar
 PICARD_JAR=/u/nobackup/klohmuel/kruegg/bin/picard.jar
 
+# this can be obtained by downloading via a browser, then scp-ing it
+GATK_JAR=/u/nobackup/klohmuel/kruegg/bin/GenomeAnalysisTK.jar
+
 
 # deal with MacOS's lameness re: zcat.  Users should not have to 
 # alter anything here, but this must still be included!
