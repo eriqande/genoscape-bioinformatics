@@ -4,10 +4,10 @@
 #$ -N snp-array
 #$ -o snp-array.log
 #$ -e snp-array.error
-#$ -l h_data=3G,time=00:15:00
+#$ -l h_data=5G,time=24:00:00
 #$ -M eric.anderson@noaa.gov
-#$ -t 1-11:1
-#$ -m bea
+#$ -t 1-187:1
+#$ -m a
 
 source ~/genoscape-bioinformatics/program-defs.sh
 source $MODULE_SOURCE
