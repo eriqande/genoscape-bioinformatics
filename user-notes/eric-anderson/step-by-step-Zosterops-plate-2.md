@@ -1,6 +1,6 @@
 Step-by-step *Zosterops* Plate 2
 ================
-17 November, 2016
+18 November, 2016
 
 -   [Introduction](#introduction)
 -   [Download the data and move it where it needs to go (~ 1 hr)](#download-the-data-and-move-it-where-it-needs-to-go-1-hr)
@@ -27,6 +27,7 @@ Step-by-step *Zosterops* Plate 2
 -   [Trying to do SNP calling as a job array](#trying-to-do-snp-calling-as-a-job-array)
     -   [First, try running a scaffold that is about 100K bp](#first-try-running-a-scaffold-that-is-about-100k-bp)
     -   [Submitting as a job array](#submitting-as-a-job-array)
+-   [Initial filtering of the VCF](#initial-filtering-of-the-vcf)
     -   [Getting a list of 1 Mb collections of scaffolds](#getting-a-list-of-1-mb-collections-of-scaffolds)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -607,16 +608,81 @@ Thu Nov 17 04:59:33 PST 2016
 
 Those are chunks of about 4 megabases each.
 
-This is working. Woo-hoo! Once it is done I will want to do like this:
+This is working. Woo-hoo! Once it is done I sort everything back together into a single VCF:
 
 ``` sh
-java -jar picard.jar SortVcf \
-      I=vcf_1.vcf \
-      I=vcf_2.vcf \
-      O=sorted.vcf
+[kruegg@n2239 try_array_SNPs]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/try_array_SNPs
+[kruegg@n2239 try_array_SNPs]$ source ~/genoscape-bioinformatics/program-defs.sh 
+[kruegg@n2239 try_array_SNPs]$ INPUTS=$(ls -l 0*.vcf | awk '{printf("I=%s ", $NF)}') 
+[kruegg@n2239 try_array_SNPs]$ module load java
+[kruegg@n2239 try_array_SNPs]$ java -jar $PICARD_JAR SortVcf $INPUTS O=twenty-birds-ZOLAv0.vcf
+
+# that just took a couple of minutes.
 ```
 
-in order to merge everythign back into a single VCF file.
+Initial filtering of the VCF
+----------------------------
+
+It looks like there are 1,553,483 variants in that file. We are going to filter them like this:
+
+1.  No indels
+2.  Biallelic only
+3.  Minor allele count &gt;= 2
+4.  minimum genotype quality = 30
+5.  minimum depth = 8
+6.  called in at least 50% of indivs
+
+We are dropping singletons amongst our 40 gene copies here.
+
+``` sh
+[kruegg@n2239 try_array_SNPs]$ module load vcftools
+# move things to new directory:
+[kruegg@n2239 try_array_SNPs]$ mv twenty-birds-ZOLAv0.vcf* ../SNPs/small_seg.vcf
+small_seg.vcf      small_seg.vcf.idx  
+[kruegg@n2239 try_array_SNPs]$ mv twenty-birds-ZOLAv0.vcf* ../SNPs/
+[kruegg@n2239 try_array_SNPs]$ cd ../SNPs/
+[kruegg@n2239 SNPs]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/SNPs
+[kruegg@n2239 SNPs]$ vcftools --vcf twenty-birds-ZOLAv0.vcf --out zola-twenty-filtered --remove-indels --min-alleles 2 --max-alleles 2 --mac 2 --minGQ 30 --minDP 8 --max-missing 0.5 --recode 
+
+VCFtools - 0.1.14
+(C) Adam Auton and Anthony Marcketta 2009
+
+Parameters as interpreted:
+    --vcf twenty-birds-ZOLAv0.vcf
+    --mac 2
+    --max-alleles 2
+    --min-alleles 2
+    --minDP 8
+    --minGQ 30
+    --max-missing 0.5
+    --out zola-twenty-filtered
+    --recode
+    --remove-indels
+
+After filtering, kept 20 out of 20 Individuals
+Outputting VCF file...
+After filtering, kept 364429 out of a possible 1553483 Sites
+Run Time = 88.00 seconds
+
+# now we also want to make the 012 file from that
+[kruegg@n2239 SNPs]$ vcftools --vcf  zola-twenty-filtered.recode.vcf --out zola-twenty-filt --012
+
+VCFtools - 0.1.14
+(C) Adam Auton and Anthony Marcketta 2009
+
+Parameters as interpreted:
+    --vcf zola-twenty-filtered.recode.vcf
+    --012
+    --out zola-twenty-filt
+
+After filtering, kept 20 out of 20 Individuals
+Writing 012 matrix files ... Done.
+After filtering, kept 364429 out of a possible 364429 Sites
+Run Time = 8.00 seconds
+[kruegg@n2239 SNPs]$ gzip -9 zola-twenty-filt.012
+```
 
 ### Getting a list of 1 Mb collections of scaffolds
 

@@ -1,0 +1,42 @@
+---
+title: "Aligning zola scaffolds to zefi with mummer"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  github_document:
+    toc: true
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "mummer-figs/"
+)
+```
+
+
+
+Download the Zebra Finch genome
+```{sh, eval=FALSE}
+[kruegg@n2239 Genome]$ wget ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/151/805/GCF_000151805.1_Taeniopygia_guttata-3.2.4/GCF_000151805.1_Taeniopygia_guttata-3.2.4_genomic.fna.gz
+--2016-11-18 06:03:15--  ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/151/805/GCF_000151805.1_Taeniopygia_guttata-3.2.4/GCF_000151805.1_Taeniopygia_guttata-3.2.4_genomic.fna.gz
+           => “GCF_000151805.1_Taeniopygia_guttata-3.2.4_genomic.fna.gz”
+Resolving ftp.ncbi.nlm.nih.gov... 130.14.250.12, 2607:f220:41e:250::12
+Connecting to ftp.ncbi.nlm.nih.gov|130.14.250.12|:21... connected.
+Logging in as anonymous ... Logged in!
+==> SYST ... done.    ==> PWD ... done.
+==> TYPE I ... done.  ==> CWD (1) /genomes/all/GCF/000/151/805/GCF_000151805.1_Taeniopygia_guttata-3.2.4 ... done.
+==> SIZE GCF_000151805.1_Taeniopygia_guttata-3.2.4_genomic.fna.gz ... 380153730
+==> PASV ... done.    ==> RETR GCF_000151805.1_Taeniopygia_guttata-3.2.4_genomic.fna.gz ... done.
+Length: 380153730 (363M) (unauthoritative)
+
+100%[================================================================================================================================================>] 380,153,730 41.2M/s   in 12s     
+
+2016-11-18 06:03:32 (29.3 MB/s) - “GCF_000151805.1_Taeniopygia_guttata-3.2.4_genomic.fna.gz” saved [380153730]
+
+[kruegg@n2239 Genome]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZEFI/Genome
+```
+
