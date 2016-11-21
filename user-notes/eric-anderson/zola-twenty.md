@@ -1,6 +1,6 @@
 Processing *Zosterops* 20 birds after the bioinformatics
 ================
-18 November, 2016
+21 November, 2016
 
 -   [Introduction](#introduction)
 -   [Plinking around](#plinking-around)
@@ -32,6 +32,7 @@ library(dplyr)
 #>     intersect, setdiff, setequal, union
 library(readr)
 library(ggplot2)
+#> Warning: package 'ggplot2' was built under R version 3.3.2
 zola <- read_012("~/Documents/UnsyncedData/ZOLA/zola-twenty-filt", gz = TRUE)
 ```
 
@@ -189,6 +190,83 @@ ggplot(fst, aes(x = FST)) +
 
 ![](zola-twenty-figs/fst-density-1.png)
 
+The two peaks on that plot, which look like the backend of an earwig, are a little bit ugly. I suspect that it is caused by singleton SNPs and the mismatching small sample sizes that we have in this small trial run. I will investigate that by removing 3 individuals from the mainland population and then only retaining SNPs genotyped in everyone. That looks like this:
+
+``` sh
+2016-11-21 06:21 /ZOLA/--% # here is the file used to drop 3 ML's
+2016-11-21 06:21 /ZOLA/--% cat drop-ML.txt
+CDH48   CDH48
+CDH49   CDH49
+CDH50   CDH50
+2016-11-21 06:21 /ZOLA/--% # and here we set 'er off
+2016-11-21 06:21 /ZOLA/--% plink --bfile clean-zola --aec --within clean-zola.pops --out HE-ML-drop  --geno 0.0  --fst --remove drop-ML.txt 
+PLINK v1.90b3.42 64-bit (20 Sep 2016)      https://www.cog-genomics.org/plink2
+(C) 2005-2016 Shaun Purcell, Christopher Chang   GNU General Public License v3
+Logging to HE-ML-drop.log.
+Options in effect:
+  --allow-extra-chr
+  --bfile clean-zola
+  --fst
+  --geno 0.0
+  --out HE-ML-drop
+  --remove drop-ML.txt
+  --within clean-zola.pops
+
+4096 MB RAM detected; reserving 2048 MB for main workspace.
+180000 variants loaded from .bim file.
+17 people (0 males, 0 females, 17 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to HE-ML-drop.nosex .
+--remove: 14 people remaining.
+--within: 2 clusters loaded, covering a total of 14 people.
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 14 founders and 0 nonfounders present.
+Calculating allele frequencies... done.
+Total genotyping rate in remaining samples is 0.947134.
+96435 variants removed due to missing genotype data (--geno).
+83565 variants and 14 people pass filters and QC.
+Note: No phenotypes present.
+Writing --fst report (2 populations) to HE-ML-drop.fst ... done.
+82094 markers with valid Fst estimates (1471 excluded).
+Mean Fst estimate: 0.0815507
+Weighted Fst estimate: 0.125074
+```
+
+So, we have 83,565 SNPs in 7 individuals from each population. Let's plot that
+
+``` r
+fst_trim <- read_delim("~/Documents/UnsyncedData/ZOLA/HE-ML-drop.fst", delim = "\t")
+#> Parsed with column specification:
+#> cols(
+#>   CHR = col_character(),
+#>   SNP = col_character(),
+#>   POS = col_integer(),
+#>   NMISS = col_integer(),
+#>   FST = col_double()
+#> )
+ggplot(fst_trim, aes(x = FST)) +
+  geom_density(fill = "blue", alpha = 0.7)
+#> Warning: Removed 1471 rows containing non-finite values (stat_density).
+```
+
+![](zola-twenty-figs/fst-dens-two-1.png) OK, that is even uglier. The issue here is that most of the SNPs have just 1 or two copies of the derived allele, and they all have the same value of Fst. And with the small samples, the values are sort of discrete-like. OK.
+
+Let's see how things look if we just make a histogram:
+
+``` r
+fsthist <- ggplot(fst, aes(x = FST)) +
+  geom_histogram(fill = "blue", alpha = 0.7, bins = 15)
+fsthist
+#> Warning: Removed 314 rows containing non-finite values (stat_bin).
+```
+
+![](zola-twenty-figs/fst-histo-1.png)
+
+``` r
+# and I will also print it to pdf
+ggsave(fsthist, filename = "fst_hist.pdf", width = 10, height = 5)
+#> Warning: Removed 314 rows containing non-finite values (stat_bin).
+```
+
 Now, we don't have these things mapped to a complete genome, but for now we can just spooge them out in scaffold order (pretending that they all just get stiched together)
 
 ``` r
@@ -200,3 +278,19 @@ ggplot(fst2, aes(x = lpos, y = FST)) +
 ```
 
 ![](zola-twenty-figs/fst-trace-1.png) There doesn't seem to be a whole lot going on there. But we might need more complete samples.
+
+I suppose it would be a lot easier to see what is going on here if we were to look at, say, just the SNPs on the longest scaffold. Let's give that a whirl. `LAII01000001.1` is the longest scaffold and has 2172 SNPs on it.
+
+``` r
+fst_scaff <- ggplot(fst %>% filter(CHR == "LAII01000001.1"), aes(x=POS, y=FST)) +
+  geom_point(colour = "blue", alpha = 0.2)
+fst_scaff
+#> Warning: Removed 2 rows containing missing values (geom_point).
+```
+
+![](zola-twenty-figs/long-scaffold-plot-1.png)
+
+``` r
+ggsave(fst_scaff, filename = "fst_scaff.pdf", width = 10, height = 5)
+#> Warning: Removed 2 rows containing missing values (geom_point).
+```
