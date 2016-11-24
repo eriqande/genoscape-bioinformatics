@@ -13,6 +13,10 @@ PICARD_JAR=/u/nobackup/klohmuel/kruegg/bin/picard.jar
 # this can be obtained by downloading via a browser, then scp-ing it
 GATK_JAR=/u/nobackup/klohmuel/kruegg/bin/GenomeAnalysisTK.jar
 
+NUCMER=/u/nobackup/klohmuel/kruegg/bin/MUMmer3.23/nucmer
+
+
+
 
 # deal with MacOS's lameness re: zcat.  Users should not have to 
 # alter anything here, but this must still be included!

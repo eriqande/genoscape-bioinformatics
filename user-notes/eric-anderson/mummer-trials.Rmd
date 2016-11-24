@@ -40,3 +40,23 @@ Length: 380153730 (363M) (unauthoritative)
 /u/home/k/kruegg/nobackup-klohmuel/ZEFI/Genome
 ```
 
+Then, after compiling MUMmer (note that it looks for a perl module in the place where it got compiled, so you
+can't move it after compiling so well...)
+```{sh, eval=FALSE}
+[kruegg@n2189 TryNucmer]$ $NUCMER -maxmatch -c 100 -p nucmer-out  ../ZEFI/Genome/GCF_000151805.1_Taeniopygia_guttata-3.2.4_genomic.fna ../ZOLA/Genome/GCA_001281735.1_ASM128173v1_genomic.fna 
+1: PREPARING DATA
+2,3: RUNNING mummer AND CREATING CLUSTERS
+# reading input file "nucmer-out.ntref" of length 1232172687
+# construct suffix tree for sequence of length 1232172687
+# (maximum reference length is 536870908)
+# (maximum query length is 4294967295)
+# process 12321726 characters per dot
+/u/home/k/kruegg/compiling/MUMmer3.23/mummer: suffix tree construction failed: textlen=1232172687 larger than maximal textlen=536870908
+ERROR: mummer and/or mgaps returned non-zero
+
+```
+
+OK....Try this then...
+```
+[kruegg@n2189 MUMmer3.23]$ make CPPFLAGS="-O3 -DSIXTYFOURBITS" 
+```

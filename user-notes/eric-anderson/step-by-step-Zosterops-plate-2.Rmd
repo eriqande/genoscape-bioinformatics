@@ -674,6 +674,28 @@ Run Time = 8.00 seconds
 ```
 
 
+## Doing SNP calling on everyone
+
+Going to try to launch this and see what happens.  It is gonna take a long time!
+```{sh, eval=FALSE}
+[kruegg@login3 full-array-SNPs-trial]$ qsub -q c2_smp.q  ~/genoscape-bioinformatics/species-level-scripts.sh/07-full-snps-trial-via-jobarray.sh
+You specified queue name = c2_smp.q : Usually this is not recommended; if the queue name conflicts with other job parameters, the job may not start. If you have questions, submit them to: support.idre.ucla.edu/helpdesk
+Your job-array 1169027.1-10:1 ("snp-array") has been submitted
+[kruegg@login3 full-array-SNPs-trial]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/full-array-SNPs-trial
+
+# so, I made a mistake there and realize that this is just going to do 1:10.
+# But that is OK.  I will throw another on to do 11 to 100 and see if that can run concurrently.
+[kruegg@login3 full-array-SNPs-trial]$ qsub -q c2_smp.q  ~/genoscape-bioinformatics/species-level-scripts.sh/07-full-snps-trial-via-jobarray11-100.sh 
+You specified queue name = c2_smp.q : Usually this is not recommended; if the queue name conflicts with other job parameters, the job may not start. If you have questions, submit them to: support.idre.ucla.edu/helpdesk
+Your job-array 1169185.11-100:1 ("snp-array") has been submitted
+
+# then I submitted 101 to 187:
+[kruegg@login3 species-level-scripts.sh]$ qsub -q c2_smp.q  ~/genoscape-bioinformatics/species-level-scripts.sh/07-full-snps-trial-via-jobarray101-187.sh
+You specified queue name = c2_smp.q : Usually this is not recommended; if the queue name conflicts with other job parameters, the job may not start. If you have questions, submit them to: support.idre.ucla.edu/helpdesk
+Your job-array 1169214.101-187:1 ("snp-array") has been submitted
+
+```
 
 ### Getting a list of 1 Mb collections of scaffolds
 

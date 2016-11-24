@@ -13,7 +13,7 @@ source ~/genoscape-bioinformatics/program-defs.sh
 source $MODULE_SOURCE
 
 module load java
-
+module load samtools
 
 
 function usage {
@@ -83,3 +83,8 @@ if [ ! -d MergedBams ]; then
 fi
 
 java -Xmx2G -jar $PICARD_JAR MergeSamFiles $BAM_COMMS  OUTPUT=MergedBams/${GENOME_DIR}-merged.bam  SORT_ORDER=coordinate
+
+
+echo "Now indexing merged bam"
+
+samtools index MergedBams/${GENOME_DIR}-merged.bam

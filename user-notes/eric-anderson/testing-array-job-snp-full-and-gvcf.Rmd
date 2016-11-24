@@ -1,0 +1,135 @@
+---
+title: "Calling SNPs, whole Enchilada and trying gVCF"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  github_document:
+    toc: true
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "calling-snps-full/"
+)
+```
+
+## How does this Scale?
+So, it was pretty easy (about 12 hours) to call all the SNPs from 20 individuals.  I don't
+know how that is going to scale to more (i.e. 192) individuals.  That is what I want to find
+out here: scaling up to 10 times more individuals.  If it only takes 10 times as long, no worries.
+If it takes a lot more, then I have to investigate something else (maybe gVCF a la GATK best practices.)
+
+It will be easy to start that full job (all the birds) on the first 10 collections of scaffolds and 
+compare the estimated times coming out of there after a few hours.  So, here we go:
+```{sh, eval=FALSE}
+# get needed files where we want them:
+[kruegg@login4 ZOLA]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA
+[kruegg@login4 ZOLA]$ mkdir full-array-SNPs-trial
+[kruegg@login4 ZOLA]$ cp try_array_SNPs/comm_lines.txt full-array-SNPs-trial/
+
+# then make a modified script:
+[kruegg@login4 species-level-scripts.sh]$ pwd
+/u/home/k/kruegg/genoscape-bioinformatics/species-level-scripts.sh
+[kruegg@login4 species-level-scripts.sh]$ cp 07-snps-via-jobarray.sh 07-full-snps-trial-via-jobarray.sh 
+[kruegg@login4 species-level-scripts.sh]$ chmod a+x 07-full-snps-trial-via-jobarray.sh 
+[kruegg@login4 species-level-scripts.sh]$ emacs 07-full-snps-trial-via-jobarray.sh 
+
+# once that script was done, I realized that I need to index the huge, 52 Gb merged Bamfile.
+# So, let's do that:
+[kruegg@n6191 MergedBams]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/MergedBams
+[kruegg@n6191 MergedBams]$ module load samtools
+[kruegg@n6191 MergedBams]$ samtools index ZOLAv0-merged.bam 
+
+# this produced output, but might not have been complete.  I will try nonetheless...
+[kruegg@login4 full-array-SNPs-trial]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/full-array-SNPs-trial
+[kruegg@login4 full-array-SNPs-trial]$ qsub  -q c2_smp.q ~/genoscape-bioinformatics/species-level-scripts.sh/07-full-snps-trial-via-jobarray.sh
+You specified queue name = c2_smp.q : Usually this is not recommended; if the queue name conflicts with other job parameters, the job may not start. If you have questions, submit them to: support.idre.ucla.edu/helpdesk
+Your job-array 1156856.1-10:1 ("snp-array") has been submitted
+
+```
+After letting that run for a little while, I compared the runtimes for each run before with 20 birds to
+what is estimated with all of the birds:
+```
+[kruegg@login2 full-array-SNPs-trial]$ for i in ../try_array_SNPs/000*.stderr; do echo -n $i; grep ProgressMeter $i | tail -n 1; done 
+../try_array_SNPs/0001.stderrINFO  06:37:50,626 ProgressMeter - Total runtime 5807.59 secs, 96.79 min, 1.61 hours 
+../try_array_SNPs/0002.stderrINFO  06:49:23,716 ProgressMeter - Total runtime 6500.61 secs, 108.34 min, 1.81 hours 
+../try_array_SNPs/0003.stderrINFO  06:11:29,520 ProgressMeter - Total runtime 4223.58 secs, 70.39 min, 1.17 hours 
+../try_array_SNPs/0004.stderrINFO  05:45:46,369 ProgressMeter - Total runtime 2679.63 secs, 44.66 min, 0.74 hours 
+../try_array_SNPs/0005.stderrINFO  05:55:38,689 ProgressMeter - Total runtime 3273.89 secs, 54.56 min, 0.91 hours 
+../try_array_SNPs/0006.stderrINFO  06:01:03,372 ProgressMeter - Total runtime 3599.47 secs, 59.99 min, 1.00 hours 
+../try_array_SNPs/0007.stderrINFO  06:26:24,741 ProgressMeter - Total runtime 5121.14 secs, 85.35 min, 1.42 hours 
+../try_array_SNPs/0008.stderrINFO  06:08:36,144 ProgressMeter - Total runtime 4051.71 secs, 67.53 min, 1.13 hours 
+../try_array_SNPs/0009.stderrINFO  06:26:18,352 ProgressMeter - Total runtime 5112.14 secs, 85.20 min, 1.42 hours 
+[kruegg@login2 full-array-SNPs-trial]$ 
+[kruegg@login2 full-array-SNPs-trial]$ 
+[kruegg@login2 full-array-SNPs-trial]$ for i in *.stderr; do echo -n $i;  tail -n 1  $i; done 
+0001.stderrINFO  13:24:33,641 ProgressMeter - LAII01000001.1:654519              0.0    49.5 m         4911.0 w        4.3%    19.1 h      18.3 h 
+0002.stderrINFO  13:24:05,459 ProgressMeter - LAII01000002.1:238376              0.0    49.0 m         4861.3 w        2.0%    40.1 h      39.3 h 
+0003.stderrINFO  13:24:33,997 ProgressMeter - LAII01000011.1:836580              0.0    49.5 m         4910.9 w        8.7%     9.5 h       8.6 h 
+0004.stderrINFO  13:25:26,428 ProgressMeter - LAII01000101.1:487230              0.0    50.3 m         4993.6 w        7.7%    10.9 h      10.1 h 
+0005.stderrINFO  13:25:24,390 ProgressMeter - LAII01000103.1:751244         188813.0    50.3 m            4.4 h       14.6%     5.7 h       4.9 h 
+0006.stderrINFO  13:25:05,068 ProgressMeter - LAII01000105.1:418373         188280.0    50.0 m            4.4 h        9.5%     8.7 h       7.9 h 
+0007.stderrINFO  13:24:27,658 ProgressMeter - LAII01001058.1:9044         113743.0    49.3 m            7.2 h        1.9%    42.2 h      41.4 h 
+0008.stderrINFO  13:25:35,709 ProgressMeter - LAII01000109.1:329947         161608.0    50.5 m            5.2 h        7.9%    10.7 h       9.9 h 
+0009.stderrINFO  13:24:54,378 ProgressMeter - LAII01000012.1:869450              0.0    49.8 m         4944.0 w        9.2%     9.1 h       8.2 h 
+0010.stderrINFO  13:24:36,368 ProgressMeter - LAII01000111.1:142607         161064.0    49.5 m            5.1 h        4.9%    16.8 h      15.9 h 
+
+```
+So, we are looking at 10 to 20 times longer to run everyone.
+
+
+## Doing the gVCF approach
+Now, I am curious as to whether it would make sense to use the GATK "Best Practices" approach of 
+calling each individual separately in a gVCF.   I indexed one of by bams and now we will try to use it:
+```{sh, eval=FALSE}
+[kruegg@n273 gVCF-trials]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/gVCF-trials
+[kruegg@n273 gVCF-trials]$ FASTA=../Genome/GCA_001281735.1_ASM128173v1_genomic.fna
+[kruegg@n273 gVCF-trials]$ BAM=../Plate_1/alignments/ZOLAv0/bam/zola-1.CDH18.bam
+
+[kruegg@n273 gVCF-trials]$ source ~/genoscape-bioinformatics/program-defs.sh
+[kruegg@n273 gVCF-trials]$ module load java
+
+# then fire it off and see how long it is estimated to take...
+[kruegg@n273 gVCF-trials]$ java -jar $GATK_JAR -R $FASTA -T HaplotypeCaller -I $BAM --emitRefConfidence GVCF -o zola-1.CDH18.g.vcf
+
+...
+
+INFO  13:59:25,588 ProgressMeter - LAII01000001.1:5670839              0.0     3.0 m          297.7 w        0.5%     9.1 h       9.1 h 
+INFO  13:59:55,590 ProgressMeter - LAII01000001.1:6055062              0.0     3.5 m          347.3 w        0.6%    10.0 h       9.9 h 
+INFO  14:00:25,592 ProgressMeter - LAII01000001.1:6645361              0.0     4.0 m          396.9 w        0.6%    10.4 h      10.3 h 
+INFO  14:00:55,594 ProgressMeter - LAII01000001.1:7214407              0.0     4.5 m          446.5 w        0.7%    10.8 h      10.7 h 
+INFO  14:01:25,595 ProgressMeter - LAII01000001.1:8346906              0.0     5.0 m          496.1 w        0.8%    10.3 h      10.3 h 
+INFO  14:01:55,597 ProgressMeter - LAII01000001.1:9014862              0.0     5.5 m          545.7 w        0.9%    10.5 h      10.4 h 
+INFO  14:02:25,599 ProgressMeter - LAII01000001.1:9651458              0.0     6.0 m          595.3 w        0.9%    10.7 h      10.6 h 
+INFO  14:02:55,600 ProgressMeter - LAII01000001.1:11052283              0.0     6.5 m          644.9 w        1.1%    10.2 h      10.0 h 
+INFO  14:03:25,602 ProgressMeter - LAII01000001.1:11966182              0.0     7.0 m          694.5 w        1.2%    10.1 h      10.0 h 
+INFO  14:03:55,609 ProgressMeter - LAII01000001.1:12928298              0.0     7.5 m          744.1 w        1.2%    10.0 h       9.9 h 
+INFO  14:04:25,611 ProgressMeter - LAII01000001.1:13837814              0.0     8.0 m          793.7 w        1.3%    10.0 h       9.8 h 
+INFO  14:04:55,612 ProgressMeter - LAII01000001.1:14504262              0.0     8.5 m          843.3 w        1.4%    10.1 h      10.0 h 
+INFO  14:05:25,614 ProgressMeter - LAII01000002.1:102497      1.5146312E7     9.0 m           35.0 s        1.5%    10.2 h      10.0 h 
+INFO  14:05:55,617 ProgressMeter - LAII01000002.1:390494      1.5146312E7     9.5 m           37.0 s        1.5%    10.6 h      10.4 h 
+INFO  14:06:25,619 ProgressMeter - LAII01000002.1:710229      1.5146312E7    10.0 m           39.0 s        1.5%    10.9 h      10.7 h 
+INFO  14:06:55,621 ProgressMeter - LAII01000002.1:833921      1.5146312E7    10.5 m           41.0 s        1.5%    11.3 h      11.2 h 
+INFO  14:07:25,623 ProgressMeter - LAII01000002.1:1245185      1.5146312E7    11.0 m           43.0 s        1.6%    11.6 h      11.4 h 
+INFO  14:07:55,625 ProgressMeter - LAII01000002.1:1542627      1.5146312E7    11.5 m           45.0 s        1.6%    11.9 h      11.7 h 
+INFO  14:08:25,627 ProgressMeter - LAII01000002.1:2038305      1.5146312E7    12.0 m           47.0 s        1.7%    12.1 h      11.9 h 
+INFO  14:09:25,629 ProgressMeter - LAII01000002.1:3686789      1.5146312E7    13.0 m           51.0 s        1.8%    11.9 h      11.7 h 
+
+```
+So, that is looking to take about 12 hours for this individual.  Man, that is a long time.  Not really sure if there is much advantage to that
+workflow.  Might be better to just do joint variant calling.
+
+
+
+## checking queues
+
+I know that the `pod` queue fails, but `c2` works.  What about others?
+
+1. I tried `inter*.q` to see how it fared.  

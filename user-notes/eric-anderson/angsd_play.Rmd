@@ -1,0 +1,37 @@
+---
+title: "Step-by-step  _Zosterops_ Plate 2"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  github_document:
+    toc: true
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "angsd-play-figs/"
+)
+```
+
+
+## Introduction
+
+I am trying to understand how Mike Miller goes about using ANGSD.  From what I can tell, reading 
+the Steelhead PM paper, they ranomly subsamled each BAM file to have 120,000 unique alignments in
+it.  
+
+I am curious to try this on the WIFL data, then do a PCA and see how it comes out.  
+
+So, first thing is to subsample.  I can use ``reformat.sh`` from the BBMap package to do this.  
+
+Ideally I would like to filter on things with alingnment MAPQ's > 10 or so.  I don't think I can
+do that with BBmap, but I can with samtools.  So I could probably pipe that to BBmap.  But I think
+that for now, rather I will just only take the primary alignment from mapped reads.  i.e.:
+```
+reformat.sh in=in.bam out=out.bam samplereadstarget=120000 mappedonly=t primaryonly=t
+```
+
+So, let's make a quick script to do this:

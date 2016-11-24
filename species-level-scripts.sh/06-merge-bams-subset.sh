@@ -79,8 +79,6 @@ fi
 
 java -Xmx2G -jar $PICARD_JAR MergeSamFiles $BAM_COMMS  OUTPUT=MergedBams/${PREFIX}-merged.bam  SORT_ORDER=coordinate
 
-fi
-
 
 echo "Now indexing merged bam"
 
