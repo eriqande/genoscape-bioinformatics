@@ -1,6 +1,6 @@
 Step-by-step *Zosterops* Plate 2
 ================
-18 November, 2016
+27 November, 2016
 
 -   [Introduction](#introduction)
 -   [Download the data and move it where it needs to go (~ 1 hr)](#download-the-data-and-move-it-where-it-needs-to-go-1-hr)
@@ -28,6 +28,7 @@ Step-by-step *Zosterops* Plate 2
     -   [First, try running a scaffold that is about 100K bp](#first-try-running-a-scaffold-that-is-about-100k-bp)
     -   [Submitting as a job array](#submitting-as-a-job-array)
 -   [Initial filtering of the VCF](#initial-filtering-of-the-vcf)
+-   [Doing SNP calling on everyone](#doing-snp-calling-on-everyone)
     -   [Getting a list of 1 Mb collections of scaffolds](#getting-a-list-of-1-mb-collections-of-scaffolds)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -683,6 +684,50 @@ After filtering, kept 364429 out of a possible 364429 Sites
 Run Time = 8.00 seconds
 [kruegg@n2239 SNPs]$ gzip -9 zola-twenty-filt.012
 ```
+
+Doing SNP calling on everyone
+-----------------------------
+
+Going to try to launch this and see what happens. It is gonna take a long time!
+
+``` sh
+[kruegg@login3 full-array-SNPs-trial]$ qsub -q c2_smp.q  ~/genoscape-bioinformatics/species-level-scripts.sh/07-full-snps-trial-via-jobarray.sh
+You specified queue name = c2_smp.q : Usually this is not recommended; if the queue name conflicts with other job parameters, the job may not start. If you have questions, submit them to: support.idre.ucla.edu/helpdesk
+Your job-array 1169027.1-10:1 ("snp-array") has been submitted
+[kruegg@login3 full-array-SNPs-trial]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/full-array-SNPs-trial
+
+# so, I made a mistake there and realize that this is just going to do 1:10.
+# But that is OK.  I will throw another on to do 11 to 100 and see if that can run concurrently.
+[kruegg@login3 full-array-SNPs-trial]$ qsub -q c2_smp.q  ~/genoscape-bioinformatics/species-level-scripts.sh/07-full-snps-trial-via-jobarray11-100.sh 
+You specified queue name = c2_smp.q : Usually this is not recommended; if the queue name conflicts with other job parameters, the job may not start. If you have questions, submit them to: support.idre.ucla.edu/helpdesk
+Your job-array 1169185.11-100:1 ("snp-array") has been submitted
+
+# then I submitted 101 to 187:
+[kruegg@login3 species-level-scripts.sh]$ qsub -q c2_smp.q  ~/genoscape-bioinformatics/species-level-scripts.sh/07-full-snps-trial-via-jobarray101-187.sh
+You specified queue name = c2_smp.q : Usually this is not recommended; if the queue name conflicts with other job parameters, the job may not start. If you have questions, submit them to: support.idre.ucla.edu/helpdesk
+Your job-array 1169214.101-187:1 ("snp-array") has been submitted
+```
+
+For some reason, the job from 101 to 187 never started. (Actually, I see now that it started, but I had somehow launched it from the wrong directory, so it totally failed. But the other one is done now. So, I am going to restart that in two chunks: 101-158 and 159-187
+
+``` sh
+[kruegg@login1 full-array-SNPs-trial]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/full-array-SNPs-trial
+[kruegg@login1 full-array-SNPs-trial]$ qsub -q c2_smp.q  ~/genoscape-bioinformatics/species-level-scripts.sh/07-full-snps-trial-via-jobarray101-158.sh
+You specified queue name = c2_smp.q : Usually this is not recommended; if the queue name conflicts with other job parameters, the job may not start. If you have questions, submit them to: support.idre.ucla.edu/helpdesk
+Your job-array 1178546.101-158:1 ("snp-array") has been submitted
+[kruegg@login1 full-array-SNPs-trial]$ 
+[kruegg@login1 full-array-SNPs-trial]$ qsub -q c2_smp.q  ~/genoscape-bioinformatics/species-level-scripts.sh/07-full-snps-trial-via-jobarray159-187.sh
+You specified queue name = c2_smp.q : Usually this is not recommended; if the queue name conflicts with other job parameters, the job may not start. If you have questions, submit them to: support.idre.ucla.edu/helpdesk
+Your job-array 1178548.159-187:1 ("snp-array") has been submitted
+[kruegg@login1 full-array-SNPs-trial]$ 
+[kruegg@login1 full-array-SNPs-trial]$ 
+[kruegg@login1 full-array-SNPs-trial]$ date
+Sun Nov 27 00:57:19 PST 2016
+```
+
+So, we will see how those work...
 
 ### Getting a list of 1 Mb collections of scaffolds
 
