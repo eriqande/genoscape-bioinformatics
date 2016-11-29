@@ -1,0 +1,135 @@
+Playing with ANGSD
+================
+29 November, 2016
+
+-   [Introduction](#introduction)
+-   [Compiling ngsTools](#compiling-ngstools)
+    -   [Now, compute the covariance matrix](#now-compute-the-covariance-matrix)
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+Introduction
+------------
+
+I am trying to understand how Mike Miller goes about using ANGSD. From what I can tell, reading the Steelhead PM paper, they ranomly subsamled each BAM file to have 120,000 unique alignments in it.
+
+I am curious to try this on the WIFL data, then do a PCA and see how it comes out.
+
+So, first thing is to subsample. I can use `reformat.sh` from the BBMap package to do this.
+
+Ideally I would like to filter on things with alingnment MAPQ's &gt; 10 or so. I don't think I can do that with BBmap, but I can with samtools. So I could probably pipe that to BBmap. But I think that for now, rather I will just only take the primary alignment from mapped reads. i.e.:
+
+    reformat.sh in=in.bam out=out.bam samplereadstarget=120000 mappedonly=t primaryonly=t
+
+So, let's make a quick script to do this and then launch it:
+
+``` sh
+[kruegg@n2238 subsampled-bams]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/WIFL/ANGSD-Trial/subsampled-bams
+[kruegg@n2238 subsampled-bams]$ qsub ~/genoscape-bioinformatics/angsd-trial-scripts/subsample-wifl.sh 
+JSV: PE=shared
+Your job 1172215 ("sub-wifl") has been submitted
+```
+
+Compiling ngsTools
+------------------
+
+This is a bit of a nightmare. Basically have to set some things cuz the module paths don't seem to work right:
+
+    module load gcc
+    module load gsl
+    module load zlib/1.2.8
+
+    git clone --recursive https://github.com/mfumagalli/ngsTools.git
+
+    # then make with an include flag so it gets the right zlib
+    cd ngsTools
+    make FLAGS="-I/u/local/apps/zlib/1.2.8/gcc-4.4.7/include"
+
+
+    # that errors out, confused about gzbuffer.   But this seems to only affect
+    # ngsDist and later packages, so I just comment those out for now in 
+    # the makefile. Specifically: #ngsDist ngsF ngsF-HMM 
+
+Angsd now seems to be working with no errors about zlib version mismatches.
+
+    # get the list of bams.  Everything of more than 8M
+    [kruegg@n2190 ANGSD-Trial]$ du -h subsampled-bams/*.bam  | awk '!($1~/K/) {n=$1; sub(/[A-Za-z]/, "", n); if(n>8.0) print $2}'  > bamlist.txt 
+    [kruegg@n2190 ANGSD-Trial]$ pwd
+    /u/home/k/kruegg/nobackup-klohmuel/WIFL/ANGSD-Trial
+
+    # then, if we did the same individual more than once, take just the first occurrence of it:
+    [kruegg@n2190 ANGSD-Trial]$ cut -d"." -f 2 bamlist.txt | paste - bamlist.txt | awk '{n[$1]++; if(n[$1]==1) print $2}' > bamlist_no_dupes.txt 
+
+    [kruegg@n2190 ANGSD-Trial]$ wc bamlist_no_dupes.txt 
+     215  215 7945 bamlist_no_dupes.txt
+     
+    # then try calling some SNPs using the settings that Mike and friends did 
+    ~/nobackup-klohmuel/bin/ngsTools/angsd/angsd  -b bamlist_no_dupes.txt  -out Results/ALL  \
+            -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0  \
+            -minMapQ 10 -minQ 20 -minInd 108 -doCounts 1 \
+            -GL 1 -doMajorMinor 1 -doMaf 2 -skipTriallelic 1  -minMaf 0.05 \
+            -SNP_pval 1e-6\
+            -doGeno 32 -doPost 2
+
+That is working just fine. So, now I think I will run it under qsub with 8 processors. I suppose I should check to see whether I need to do anything funny with zlib when running under qsub... To check that I will just get a new shell and launch angsd with no modules, etc. Yes, that is problematic! So try loading zlib `module load zlib/1.2.8`. Yep, that does the trick.
+
+Here is what I did:
+
+    [kruegg@n2195 ANGSD-Trial]$ qsub ~/genoscape-bioinformatics/angsd-trial-scripts/call-snps-with-angsd.sh 
+    JSV: PE=shared
+    JSV: No h_data specified; setting h_data=1G.
+    Your job 1173036 ("angsd-wifl") has been submitted
+    [kruegg@n2195 ANGSD-Trial]$ pwd
+    /u/home/k/kruegg/nobackup-klohmuel/WIFL/ANGSD-Trial
+
+We will see if that is enough memory or not...
+
+NO...that aborted. So, I tried giving it 3G per thread... and restarted it. That seems to be working now.
+
+It got done after about a long night and then I gunzipped the files in the Results directory.
+
+### Now, compute the covariance matrix
+
+Find out how many loci:
+
+``` sh
+[kruegg@n7188 Results]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/WIFL/ANGSD-Trial/Results
+[kruegg@n7188 Results]$ wc ALL.mafs 
+ 10865  76055 651496 ALL.mafs
+```
+
+And so, voila! that is 10864 loci. Not really that many. Possibly because of the MAF filter at 0.05.
+
+And I have 215 individuals in there:
+
+``` sh
+[kruegg@n7188 ANGSD-Trial]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/WIFL/ANGSD-Trial
+[kruegg@n7188 ANGSD-Trial]$ wc bamlist_no_dupes.txt 
+ 215  215 7945 bamlist_no_dupes.txt
+```
+
+Anyway, we now compute that covar matrix, and we will do it just like in the tutorial.
+
+``` sh
+[kruegg@n7188 ANGSD-Trial]$ ~/nobackup-klohmuel/bin/ngsTools/ngsPopGen/ngsCovar  -probfile Results/ALL.geno -outfile Results/ALL.covar -nind 215 -nsites 10864  -call 0 -norm 0
+nsites is 10864 but effective is 10864.000000
+[kruegg@n7188 ANGSD-Trial]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/WIFL/ANGSD-Trial
+```
+
+And then let's try running their Rscript:
+
+``` sh
+[kruegg@n7188 Results]$ module load R
+Rscript -e 'write.table(cbind(seq(1,215),rep(1,215),c(rep("WIFL",215))), row.names=F, sep=" ", col.names=c("FID","IID","CLUSTER"), file="Results/ALL.clst", quote=F)'
+[kruegg@n7188 ANGSD-Trial]$ Rscript -e 'write.table(cbind(seq(1,215),rep(1,215),c(rep("WIFL",215))), row.names=F, sep=" ", col.names=c("FID","IID","CLUSTER"), file="Results/ALL.clst", quote=F)'
+
+# and then, because I couldn't get optparse to install on Hoffman2
+# I copied the Results folder over and ran it on my laptop:
+Rscript plotPCA.R -i Results/ALL.covar -c 1-2 -a Results/ALL.clst -o Results/ALL.pca.pdf
+```
+
+The result is in:
+`/Users/eriq/Documents/git-repos/genoscape-bioinformatics/angsd-trial-scripts/Results/ALL.pca.pdf` It would benefit from some colors for birds from different places, but on the whole it is clear that there is not so much information in those 10K SNPs as in the 180K that we were able to call using all the data and GATK.

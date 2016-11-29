@@ -719,6 +719,23 @@ Sun Nov 27 00:57:19 PST 2016
 ```
 So, we will see how those work...
 
+Some of 1--100 failed:
+```{sh, eval=FALSE}
+[kruegg@login1 full-array-SNPs-trial]$ grep error *.stderr
+0054.stderr:##### ERROR The error message below tells you what is the problem.
+0054.stderr:##### ERROR Please do NOT post this error to the GATK forum unless you have really tried to fix it yourself.
+0054.stderr:##### ERROR MESSAGE: An error occurred because you did not provide enough memory to run this program. You can use the -Xmx argument (before the -jar argument) to adjust the maximum heap size provided to Java. Note that this is a JVM argument, not a GATK argument.
+0057.stderr:##### ERROR If not, please post the error message, with stack trace, to the GATK forum.
+0057.stderr:##### ERROR MESSAGE: Code exception (see stack trace for error itself)
+0073.stderr:##### ERROR If not, please post the error message, with stack trace, to the GATK forum.
+0073.stderr:##### ERROR MESSAGE: Code exception (see stack trace for error itself)
+0085.stderr:##### ERROR If not, please post the error message, with stack trace, to the GATK forum.
+0085.stderr:##### ERROR MESSAGE: Code exception (see stack trace for error itself)
+
+```
+So, that is 0054, 0057, 0073, and 0085.  In the last three of those cases, it looks like the problem is a bug that should
+have been fixed by version 3.6 (or I could use a nightly build).  See [here](http://gatkforums.broadinstitute.org/wdl/discussion/7756/hashmap-iterator-problem-with-gatk-3-6-on-na12878-validations).
+
 
 ### Getting a list of 1 Mb collections of scaffolds
 

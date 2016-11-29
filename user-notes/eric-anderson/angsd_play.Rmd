@@ -1,5 +1,5 @@
 ---
-title: "Step-by-step  _Zosterops_ Plate 2"
+title: "Playing with ANGSD"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
   github_document:
@@ -92,6 +92,71 @@ That is working just fine.  So, now I think I will run it under qsub with 8 proc
 see whether I need to do anything funny with zlib when running under qsub... To check that I will just get 
 a new shell and launch angsd with no modules, etc.  Yes, that is problematic!  So try loading zlib 
 `module load zlib/1.2.8`.  Yep, that does the trick.  
+
+Here is what I did:
+```
+[kruegg@n2195 ANGSD-Trial]$ qsub ~/genoscape-bioinformatics/angsd-trial-scripts/call-snps-with-angsd.sh 
+JSV: PE=shared
+JSV: No h_data specified; setting h_data=1G.
+Your job 1173036 ("angsd-wifl") has been submitted
+[kruegg@n2195 ANGSD-Trial]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/WIFL/ANGSD-Trial
+```
+We will see if that is enough memory or not...
+
+NO...that aborted.  So, I tried giving it 3G per thread... and restarted it.  That seems to be working now.
+
+It got done after about a long night and then I gunzipped the files in the Results directory.
+
+### Now, compute the covariance matrix
+
+Find out how many loci:
+```{sh, eval=FALSE}
+[kruegg@n7188 Results]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/WIFL/ANGSD-Trial/Results
+[kruegg@n7188 Results]$ wc ALL.mafs 
+ 10865  76055 651496 ALL.mafs
+
+```
+And so, voila! that is 10864 loci.  Not really that many.  Possibly because of the 
+MAF filter at 0.05. 
+
+And I have 215 individuals in there:
+```{sh, eval=FALSE}
+[kruegg@n7188 ANGSD-Trial]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/WIFL/ANGSD-Trial
+[kruegg@n7188 ANGSD-Trial]$ wc bamlist_no_dupes.txt 
+ 215  215 7945 bamlist_no_dupes.txt
+```
+
+
+Anyway, we now compute that covar matrix, and we will do it 
+just like in the tutorial.  
+```{sh, eval=FALSE}
+[kruegg@n7188 ANGSD-Trial]$ ~/nobackup-klohmuel/bin/ngsTools/ngsPopGen/ngsCovar  -probfile Results/ALL.geno -outfile Results/ALL.covar -nind 215 -nsites 10864  -call 0 -norm 0
+nsites is 10864 but effective is 10864.000000
+[kruegg@n7188 ANGSD-Trial]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/WIFL/ANGSD-Trial
+```
+
+And then let's try running their Rscript:
+```{sh, eval=FALSE}
+[kruegg@n7188 Results]$ module load R
+Rscript -e 'write.table(cbind(seq(1,215),rep(1,215),c(rep("WIFL",215))), row.names=F, sep=" ", col.names=c("FID","IID","CLUSTER"), file="Results/ALL.clst", quote=F)'
+[kruegg@n7188 ANGSD-Trial]$ Rscript -e 'write.table(cbind(seq(1,215),rep(1,215),c(rep("WIFL",215))), row.names=F, sep=" ", col.names=c("FID","IID","CLUSTER"), file="Results/ALL.clst", quote=F)'
+
+# and then, because I couldn't get optparse to install on Hoffman2
+# I copied the Results folder over and ran it on my laptop:
+Rscript plotPCA.R -i Results/ALL.covar -c 1-2 -a Results/ALL.clst -o Results/ALL.pca.pdf
+
+```
+
+The result is in:  
+`/Users/eriq/Documents/git-repos/genoscape-bioinformatics/angsd-trial-scripts/Results/ALL.pca.pdf`
+It would benefit from some colors for birds from different places, but on the whole it is clear that there is not so much 
+information in those 10K SNPs as in the 180K that we were able to call using all the data and GATK.
+
+
 
 
 
