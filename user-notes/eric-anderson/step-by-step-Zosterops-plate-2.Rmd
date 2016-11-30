@@ -755,7 +755,28 @@ Then I will put the file with the appropriate `-L` commands in that directory:
 Then i need to modify the script so that it uses 1-4 but pulls the correct number out of the file. I will
 call that modified script: `/species-level-scripts.sh/07-snps-via-jobarray-4-error-redos.sh`.
 
+After that, I tried starting it up:
+```{sh, eval=FALSE}
+[kruegg@login3 full-array-SNPs-trial-error-redos]$ qsub -q c2_smp.q  ~/genoscape-bioinformatics/species-level-scripts.sh/07-snps-via-jobarray-4-error-redos.sh 
+You specified queue name = c2_smp.q : Usually this is not recommended; if the queue name conflicts with other job parameters, the job may not start. If you have questions, submit them to: support.idre.ucla.edu/helpdesk
+Your job-array 1193008.1-4:1 ("snp-array") has been submitted
+[kruegg@login3 full-array-SNPs-trial-error-redos]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/full-array-SNPs-trial-error-redos
 
+```
+
+That is running.  It turns out that 0173 also did not finish.  It hit 24 hours and croaked with about 90 minutes left.  This was its last
+correspondence:
+```
+INFO  11:14:33,153 ProgressMeter - LAII01000009.1:9311785              0.0    24.0 h        15250.3 w       94.1%    25.5 h      90.4 m
+```
+However the final line in 0173.vcf is:
+```
+LAII01000009.1	9297916	.	T	C	23.47	.	AC=1;AF=2.976e-03;AN=336;BaseQRankSum=-1.592;Clippi...
+```
+And it *is* complete and has a line ending on it.  So, I think that I could just start this up again at 9297920 or so and be good to go.
+
+Bummer.
 
 ### Getting a list of 1 Mb collections of scaffolds
 

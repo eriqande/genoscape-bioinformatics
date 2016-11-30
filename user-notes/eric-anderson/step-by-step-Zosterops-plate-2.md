@@ -1,6 +1,6 @@
 Step-by-step *Zosterops* Plate 2
 ================
-29 November, 2016
+30 November, 2016
 
 -   [Introduction](#introduction)
 -   [Download the data and move it where it needs to go (~ 1 hr)](#download-the-data-and-move-it-where-it-needs-to-go-1-hr)
@@ -29,6 +29,7 @@ Step-by-step *Zosterops* Plate 2
     -   [Submitting as a job array](#submitting-as-a-job-array)
 -   [Initial filtering of the VCF](#initial-filtering-of-the-vcf)
 -   [Doing SNP calling on everyone](#doing-snp-calling-on-everyone)
+    -   [Redoing the failures](#redoing-the-failures)
     -   [Getting a list of 1 Mb collections of scaffolds](#getting-a-list-of-1-mb-collections-of-scaffolds)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -745,6 +746,44 @@ Some of 1--100 failed:
 ```
 
 So, that is 0054, 0057, 0073, and 0085. In the last three of those cases, it looks like the problem is a bug that should have been fixed by version 3.6 (or I could use a nightly build). See [here](http://gatkforums.broadinstitute.org/wdl/discussion/7756/hashmap-iterator-problem-with-gatk-3-6-on-na12878-validations).
+
+But the first case looks like it might be an issue with insufficient memory. So, I am going to try to re-run all of these using a recent nightly build and with 4 Gb instead of 2 for memory.
+
+### Redoing the failures
+
+Here we go. So that I don't accidentally overwrite anything, I am going to make a new directory for this: `/u/home/k/kruegg/nobackup-klohmuel/ZOLA/full-array-SNPs-trial-error-redos`.
+
+Then I will put the file with the appropriate `-L` commands in that directory:
+
+``` sh
+[kruegg@login3 full-array-SNPs-trial-error-redos]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/full-array-SNPs-trial-error-redos
+[kruegg@login3 full-array-SNPs-trial-error-redos]$ awk '$1 == 54 || $1==57 || $1==73 || $1 == 85' ../full-array-SNPs-trial/comm_lines.txt > comm_lines.txt
+```
+
+Then i need to modify the script so that it uses 1-4 but pulls the correct number out of the file. I will call that modified script: `/species-level-scripts.sh/07-snps-via-jobarray-4-error-redos.sh`.
+
+After that, I tried starting it up:
+
+``` sh
+[kruegg@login3 full-array-SNPs-trial-error-redos]$ qsub -q c2_smp.q  ~/genoscape-bioinformatics/species-level-scripts.sh/07-snps-via-jobarray-4-error-redos.sh 
+You specified queue name = c2_smp.q : Usually this is not recommended; if the queue name conflicts with other job parameters, the job may not start. If you have questions, submit them to: support.idre.ucla.edu/helpdesk
+Your job-array 1193008.1-4:1 ("snp-array") has been submitted
+[kruegg@login3 full-array-SNPs-trial-error-redos]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/full-array-SNPs-trial-error-redos
+```
+
+That is running. It turns out that 0173 also did not finish. It hit 24 hours and croaked with about 90 minutes left. This was its last correspondence:
+
+    INFO  11:14:33,153 ProgressMeter - LAII01000009.1:9311785              0.0    24.0 h        15250.3 w       94.1%    25.5 h      90.4 m
+
+However the final line in 0173.vcf is:
+
+    LAII01000009.1  9297916 .   T   C   23.47   .   AC=1;AF=2.976e-03;AN=336;BaseQRankSum=-1.592;Clippi...
+
+And it *is* complete and has a line ending on it. So, I think that I could just start this up again at 9297920 or so and be good to go.
+
+Bummer.
 
 ### Getting a list of 1 Mb collections of scaffolds
 
