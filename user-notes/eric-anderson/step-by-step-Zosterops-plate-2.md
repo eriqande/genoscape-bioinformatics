@@ -1,6 +1,6 @@
 Step-by-step *Zosterops* Plate 2
 ================
-30 November, 2016
+12 December, 2016
 
 -   [Introduction](#introduction)
 -   [Download the data and move it where it needs to go (~ 1 hr)](#download-the-data-and-move-it-where-it-needs-to-go-1-hr)
@@ -30,7 +30,8 @@ Step-by-step *Zosterops* Plate 2
 -   [Initial filtering of the VCF](#initial-filtering-of-the-vcf)
 -   [Doing SNP calling on everyone](#doing-snp-calling-on-everyone)
     -   [Redoing the failures](#redoing-the-failures)
-    -   [Getting a list of 1 Mb collections of scaffolds](#getting-a-list-of-1-mb-collections-of-scaffolds)
+    -   [Incorporating the Redone Ones And Merging](#incorporating-the-redone-ones-and-merging)
+    -   [Some SNP filtering to make a final VCF to use](#some-snp-filtering-to-make-a-final-vcf-to-use)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 Introduction
@@ -783,8 +784,119 @@ However the final line in 0173.vcf is:
 
 And it *is* complete and has a line ending on it. So, I think that I could just start this up again at 9297920 or so and be good to go.
 
-Bummer.
+Let's start that up and see what happens:
 
-### Getting a list of 1 Mb collections of scaffolds
+``` sh
+[kruegg@login2 full-array-SNPs-trial-error-redos]$ qsub -q c2_smp.q  ~/genoscape-bioinformatics/species-level-scripts.sh/07-redo-00173.sh
+You specified queue name = c2_smp.q : Usually this is not recommended; if the queue name conflicts with other job parameters, the job may not start. If you have questions, submit them to: support.idre.ucla.edu/helpdesk
+Your job 1214397 ("snp-array") has been submitted
+[kruegg@login2 full-array-SNPs-trial-error-redos]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/ZOLA/full-array-SNPs-trial-error-redos
+```
 
-Here is a little script that creates a tab-delimited file of `-L` commands to be used to pick out collections of scaffolds whose summed lengths try to be just a bit over 1 million base pairs:
+I set that up to only call SNPs in the part of the scaffold that remained. e.g.: `SEG="-L LAII01000009.1:9297920-9896429"`
+
+### Incorporating the Redone Ones And Merging
+
+So, after all that, we have that 0054 failed again for insufficient memory, but evertything else finished. First we have a little bit of bookkeeping to do:
+
+    [kruegg@n2236 full-array-SNPs-trial]$ pwd
+    /u/home/k/kruegg/nobackup-klohmuel/ZOLA/full-array-SNPs-trial
+    [kruegg@n2236 full-array-SNPs-trial]$ mkdir failures_1
+    [kruegg@n2236 full-array-SNPs-trial]$ mv 0054.* 0057.* 0073.* 0085.*  failures_1/
+    [kruegg@n2236 full-array-SNPs-trial]$ mkdir failures_2
+    [kruegg@n2236 full-array-SNPs-trial]$ mv ../full-array-SNPs-trial-error-redos/0054.* failures_2/
+    [kruegg@n2236 full-array-SNPs-trial]$ cd ../full-array-SNPs-trial-error-redos/
+    [kruegg@n2236 full-array-SNPs-trial-error-redos]$ ls
+    0057.stderr  0057.vcf     0073.stdout  0073.vcf.idx  0085.stdout  0085.vcf.idx  0173b.stdout  0173b.vcf.idx   snp-array.error
+    0057.stdout  0073.stderr  0073.vcf     0085.stderr   0085.vcf     0173b.stderr  0173b.vcf     comm_lines.txt  snp-array.log
+    [kruegg@n2236 full-array-SNPs-trial-error-redos]$ mv 0054.* 0057.* 0073.* 0085.*  ../full-array-SNPs-trial/
+    mv: cannot stat `0054.*': No such file or directory
+    [kruegg@n2236 full-array-SNPs-trial-error-redos]$ mv 0173b.* ../full-array-SNPs-trial/
+    [kruegg@n2236 full-array-SNPs-trial-error-redos]$ ls
+    comm_lines.txt  snp-array.error  snp-array.log
+
+OK, now, we have everything in: `/u/home/k/kruegg/nobackup-klohmuel/ZOLA/full-array-SNPs-trial`.
+
+So, now we need to merge all of those vcf files into a single vcf file. We use Picard tools for that:
+
+    [kruegg@n2236 full-array-SNPs-trial]$ pwd
+    /u/home/k/kruegg/nobackup-klohmuel/ZOLA/full-array-SNPs-trial
+    [kruegg@n2236 full-array-SNPs-trial]$ source ~/genoscape-bioinformatics/program-defs.sh 
+    [kruegg@n2236 full-array-SNPs-trial]$ INPUTS=$(ls -l 0*.vcf | awk '{printf("I=%s ", $NF)}') 
+    [kruegg@n2236 full-array-SNPs-trial]$ module load java
+    [kruegg@n2236 full-array-SNPs-trial]$ java -jar $PICARD_JAR SortVcf $INPUTS O=full-ZOLAv0.vcf
+
+    # that takes about 12 minutes
+    # the file it produces is only 8.8 Gb:
+    [kruegg@n2236 full-array-SNPs-trial]$ du -h full-ZOLAv0.vcf
+    8.8G    full-ZOLAv0.vcf
+
+    # once that is done, I will move that to the SNP directory
+    [kruegg@n2236 full-array-SNPs-trial]$ mv full-ZOLAv0.vcf ../SNPs/
+
+    # and move the .vcf.idx file there as well:
+    [kruegg@n2236 full-array-SNPs-trial]$ mv full-ZOLAv0.vcf.idx ../SNPs/
+
+### Some SNP filtering to make a final VCF to use
+
+Our filtering criteria:
+
+1.  No indels
+2.  Biallelic only
+3.  Minor allele frequency &gt; 0.01
+4.  minimum genotype quality = 30
+5.  minimum depth = 8
+6.  called in at least 50% of indivs
+
+So, let's do that:
+
+    [kruegg@n2236 SNPs]$ module load vcftools
+    [kruegg@n2236 SNPs]$ vcftools --vcf full-ZOLAv0.vcf --out full-ZOLAv0-filtered  --remove-indels --min-alleles 2 --max-alleles 2 --maf 0.01  --minGQ 30 --minDP 8 --max-missing 0.5 --recode
+
+    VCFtools - 0.1.14
+    (C) Adam Auton and Anthony Marcketta 2009
+
+    Parameters as interpreted:
+        --vcf full-ZOLAv0.vcf
+        --maf 0.01
+        --max-alleles 2
+        --min-alleles 2
+        --minDP 8
+        --minGQ 30
+        --max-missing 0.5
+        --out full-ZOLAv0-filtered
+        --recode
+        --remove-indels
+
+    After filtering, kept 192 out of 192 Individuals
+    Outputting VCF file...
+    After filtering, kept 340846 out of a possible 2937379 Sites
+    Run Time = 666.00 seconds
+
+OK, we have kept 340K SNPs. That sounds like a good number.
+
+Let's make an 012 file and gzip it:
+
+    [kruegg@n2236 SNPs]$ vcftools --vcf  full-ZOLAv0-filtered.recode.vcf --out full-ZOLAv0-filtered  --012
+
+    VCFtools - 0.1.14
+    (C) Adam Auton and Anthony Marcketta 2009
+
+    Parameters as interpreted:
+        --vcf full-ZOLAv0-filtered.recode.vcf
+        --012
+        --out full-ZOLAv0-filtered
+
+    After filtering, kept 192 out of 192 Individuals
+    Writing 012 matrix files ... Done.
+    After filtering, kept 340846 out of a possible 340846 Sites
+    Run Time = 40.00 seconds
+
+    [kruegg@n2236 SNPs]$ gzip full-ZOLAv0-filtered.012
+    [kruegg@n2236 SNPs]$ du -h full-ZOLAv0-filtered.012*
+    11M full-ZOLAv0-filtered.012.gz
+    4.0K    full-ZOLAv0-filtered.012.indv
+    7.4M    full-ZOLAv0-filtered.012.pos
+
+    # Booyah! We are good to start looking at those now.
