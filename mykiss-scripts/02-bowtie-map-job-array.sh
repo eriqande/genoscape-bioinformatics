@@ -11,20 +11,11 @@
 #$ -m a
 
 
-source data-defs.sh 
-source $PROGDEFS
-
 
 source /u/local/Modules/default/init/modules.sh
 module load samtools
 module load bowtie2
 
-# get absolute path to the genome database
-#if [ $(uname -a | awk '{print $1}') == "Darwin" ]; then
-#  GENOME_DB_ABS=$(fp $GENOME_DB)  # this is just here to test on my laptop.  Most people will not have fp. But Mac does not have readlink -f
-#else
-#  GENOME_DB_ABS=$(readlink -f $GENOME_DB)
-#fi
 
 GENOME_DB=/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Genome/bowtie2-omyV6/omyV6
 GENOME_DB_ABS=$GENOME_DB
