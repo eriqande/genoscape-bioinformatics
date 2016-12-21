@@ -7,10 +7,10 @@
 #$ -pe shared 4
 #$ -l h_data=4G,time=12:00:00
 #$ -M eric.anderson@noaa.gov
-#$ -t 1-242:1
+#$ -t 1-2:1
 #$ -m a
 
-
+# gotta  change it back to 242 later..
 
 source /u/local/Modules/default/init/modules.sh
 module load samtools
@@ -29,8 +29,6 @@ mkdir -p $BAMOUTDIR
 mkdir -p $REPORTOUTDIR
 
 
-SGE_TASK_ID=1
-
 # get the relevant line from the id file and store as a bash array,
 # then get the necessary parts of it
 IDFILE=/u/home/k/kruegg/genoscape-bioinformatics/mykiss-scripts/mykiss_ids.txt
@@ -44,10 +42,9 @@ thePU=${array[2]}
 FQ1=$RADDIR/${theID}_R1.fastq.gz
 FQ2=$RADDIR/${theID}_R2.fastq.gz
 
-bowtie2 -x $GENOME_DB_ABS \
-	--threads 4 -1 $FQ1 -2 $FQ2 \
-	--rg-id $theID --rg SM:$theSM --rg LB:$theLB \
-	--rg PU:$thePU --rg PL:illumina  2> ../$REPORTOUTDIR/$theID  | \
-	samtools view -bhS - | \
-	samtools sort -  ../$BAMOUTDIR/$theID     # 	with newer version of samtools you need this:  samtools sort -  > ../$BAMOUTDIR/$ID.bam
+bowtie2 -x $GENOME_DB_ABS --threads 4 -1 $FQ1 -2 $FQ2 \
+  --rg-id $theID --rg SM:$theSM --rg LB:$theLB --rg PU:$thePU \
+  --rg PL:illumina  2> $REPORTOUTDIR/$theID  | \
+  samtools view -bhS - | \
+  samtools sort - $BAMOUTDIR/$theID     # 	with newer version of samtools you need this:  samtools sort -  > ../$BAMOUTDIR/$ID.bam
 
