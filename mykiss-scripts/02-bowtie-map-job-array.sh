@@ -4,10 +4,10 @@
 #$ -N radMap
 #$ -o radMap.log
 #$ -e radMap.error
-#$ -pe shared 4
+#$ -pe shared 2
 #$ -l h_data=4G,time=12:00:00
 #$ -M eric.anderson@noaa.gov
-#$ -t 1-2:1
+#$ -t 1-242:1
 #$ -m a
 
 # gotta  change it back to 242 later..
@@ -42,7 +42,7 @@ thePU=${array[2]}
 FQ1=$RADDIR/${theID}_R1.fastq.gz
 FQ2=$RADDIR/${theID}_R2.fastq.gz
 
-bowtie2 -x $GENOME_DB_ABS --threads 4 -1 $FQ1 -2 $FQ2 \
+bowtie2 -x $GENOME_DB_ABS --threads 2 -1 $FQ1 -2 $FQ2 \
   --rg-id $theID --rg SM:$theSM --rg LB:$theLB --rg PU:$thePU \
   --rg PL:illumina  2> $REPORTOUTDIR/$theID  | \
   samtools view -bhS - | \
