@@ -26,18 +26,21 @@ store those in the repo, but I will put them into `./mykiss_scripts/`
 ## Build bowtie genome data base
 
 Simple, one script.  Gonna call it omyV6.  The first time I did it I think I might not have given it
-enough time, since bowtie2 never completed when aligning against it later.  So, this time I have given it
+enough time, since bowtie2 never completed when aligning against it later.  (And, now that I look over my
+emails from the cluster, that job was killed).  So, this time I have given it
 24 hours and we will give it a whirl.
 ```{sh, eval=FALSE}
-[kruegg@login3 Genome]$ qsub ~/genoscape-bioinformatics/mykiss-scripts/01-bowtie2-build-genome-database.sh  omyV6Chr.fasta  omyV6 
-JSV: PE=shared
-Your job 1374265 ("bowtie2-build-db") has been submitted
-[kruegg@login3 Genome]$ pwd
+[kruegg@login1 Genome]$ pwd
 /u/home/k/kruegg/nobackup-klohmuel/Mykiss/Genome
-[kruegg@login3 Genome]$ date
-Wed Dec 21 14:11:04 PST 2016
-
+[kruegg@login1 Genome]$ qsub ~/genoscape-bioinformatics/mykiss-scripts/01-bowtie2-build-genome-database.sh  omyV6Chr.fasta  omyV6
+JSV: PE=shared
+Your job 1397081 ("bowtie2-build-db") has been submitted
+[kruegg@login1 Genome]$ date
+Tue Dec 27 10:02:16 PST 2016
 ```
+Once that is done, we will try mapping some small bits first, then let it rip in a big job array. 
+
+Aha! Done now.  And it only took a couple minutes over 1 hour.  
 
 ## Mapping
 
@@ -66,8 +69,28 @@ and the first few lines of the file look like:
 I am saving that in the repo at `./mykiss-scripts/mykiss_ids.txt`.  
 
 Now, I write a job-array script that picks out each line, then grabs the appropriate file
-and aligns it.  That script is called `./mykiss-scripts/02-bowtie-map-job-array.sh` and I
-in the process of debugging it at the moment.
+and aligns it.  That script is called `./mykiss-scripts/02-bowtie-map-job-array.sh`.
+That seems content to run on up to 20 nodes at 2 threads each at a time.  So it should finish in just
+a few hours. The first time I ran it 
+it turns out I hadn't transferred all the data yet, because Kanaloa had barfed while I was scp-ing.
+So, I finally got all the data, and then I ran the thing like this:
+```{sh, eval=FALSE}
+[kruegg@login1 Mykiss_all_preps]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Mykiss_all_preps
+[kruegg@login1 Mykiss_all_preps]$ qsub ~/genoscape-bioinformatics/mykiss-scripts/02-bowtie-map-job-array.sh
+JSV: PE=shared
+Your job-array 1413857.1-242:1 ("radMap") has been submitted
+[kruegg@login1 Mykiss_all_preps]$ date
+Fri Dec 30 04:56:10 PST 2016
+
+```
+Holy Smokes!  There must be very little load on hoffman at the moment---all 242 jobs started straight away!
+
+
+
+
+
+
 
 
 

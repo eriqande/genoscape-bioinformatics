@@ -1,0 +1,70 @@
+Step-by-step Mykiss
+================
+30 December, 2016
+
+-   [Introduction](#introduction)
+-   [Build bowtie genome data base](#build-bowtie-genome-data-base)
+-   [Mapping](#mapping)
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+Introduction
+------------
+
+We have the data from the Prince et al. study. We have stuff that has already been demultiplexed, etc. Also, the names of the samples are not the same as the names of the files. So, we are going to use modified version of the genoscape-bioinformatics scripts. I am going to store those in the repo, but I will put them into `./mykiss_scripts/`
+
+Build bowtie genome data base
+-----------------------------
+
+Simple, one script. Gonna call it omyV6. The first time I did it I think I might not have given it enough time, since bowtie2 never completed when aligning against it later. (And, now that I look over my emails from the cluster, that job was killed). So, this time I have given it 24 hours and we will give it a whirl.
+
+``` sh
+[kruegg@login1 Genome]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Genome
+[kruegg@login1 Genome]$ qsub ~/genoscape-bioinformatics/mykiss-scripts/01-bowtie2-build-genome-database.sh  omyV6Chr.fasta  omyV6
+JSV: PE=shared
+Your job 1397081 ("bowtie2-build-db") has been submitted
+[kruegg@login1 Genome]$ date
+Tue Dec 27 10:02:16 PST 2016
+```
+
+Once that is done, we will try mapping some small bits first, then let it rip in a big job array.
+
+Aha! Done now. And it only took a couple minutes over 1 hour.
+
+Mapping
+-------
+
+This is a little different than before because we are going to do it as a job array and we want to only pick certain files out (because mykiss and chinook are all together in one directory), and we are going to want to name the sample with the DNA name, etc. I have all the IDs and the associated file names in the Excel file that Prince et al posted in the supplement on Biorxiv. I copied the text from the relevant sheet in there and then turned that into a text file with the stuff that I needed in it which we will use for the RG tags.
+
+I did this:
+
+``` sh
+pbpaste | tr '\r' '\n' | awk 'BEGIN {print "0 ID PU SM PL LB"} NR > 1 {print ++n,$1, $3"."$4, $NF, "ILLUMINA", $4}' > mykiss_ids.txt 
+```
+
+and the first few lines of the file look like:
+
+    0 ID PU SM PL LB
+    1 SOMM024_NoIndex_AAGACGTGCAGG SOMM024.NoIndex DNAA004_A04 ILLUMINA NoIndex
+    2 SOMM024_NoIndex_AAGCTATGCAGG SOMM024.NoIndex DNAA004_A05 ILLUMINA NoIndex
+    3 SOMM024_NoIndex_AATATCTGCAGG SOMM024.NoIndex DNAA004_A06 ILLUMINA NoIndex
+    4 SOMM024_NoIndex_AATGAGTGCAGG SOMM024.NoIndex DNAA004_A07 ILLUMINA NoIndex
+    5 SOMM024_NoIndex_ACATACTGCAGG SOMM024.NoIndex DNAA001_D08 ILLUMINA NoIndex
+    6 SOMM024_NoIndex_AGCGCATGCAGG SOMM024.NoIndex DNAA004_B04 ILLUMINA NoIndex
+    7 SOMM024_NoIndex_AGGGTCTGCAGG SOMM024.NoIndex DNAA004_B05 ILLUMINA NoIndex
+
+I am saving that in the repo at `./mykiss-scripts/mykiss_ids.txt`.
+
+Now, I write a job-array script that picks out each line, then grabs the appropriate file and aligns it. That script is called `./mykiss-scripts/02-bowtie-map-job-array.sh`. That seems content to run on up to 20 nodes at 2 threads each at a time. So it should finish in just a few hours. The first time I ran it it turns out I hadn't transferred all the data yet, because Kanaloa had barfed while I was scp-ing. So, I finally got all the data, and then I ran the thing like this:
+
+``` sh
+[kruegg@login1 Mykiss_all_preps]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Mykiss_all_preps
+[kruegg@login1 Mykiss_all_preps]$ qsub ~/genoscape-bioinformatics/mykiss-scripts/02-bowtie-map-job-array.sh
+JSV: PE=shared
+Your job-array 1413857.1-242:1 ("radMap") has been submitted
+[kruegg@login1 Mykiss_all_preps]$ date
+Fri Dec 30 04:56:10 PST 2016
+```
+
+Holy Smokes! There must be very little load on hoffman at the moment---all 242 jobs started straight away!
