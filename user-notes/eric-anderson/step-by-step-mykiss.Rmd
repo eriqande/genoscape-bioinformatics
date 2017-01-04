@@ -257,4 +257,49 @@ First, I make a tab-delimited file that holds the chromosomes, so I can do it in
 29	omy29
 ```
 
-Then we make a script called `mykiss-scripts/05-call-snps-array.sh`.  
+Then we make a script called `mykiss-scripts/05-call-snps-array.sh`, and we call it like:
+```{sh, eval=FALSE}
+[kruegg@n2168 SNPs]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Mykiss_all_preps/SNPs
+[kruegg@n2168 SNPs]$ qsub ~/genoscape-bioinformatics/mykiss-scripts/05-call-snps-array.sh
+JSV: PE=shared
+Your job-array 1436581.1-29:1 ("snp-array") has been submitted
+[kruegg@n2168 SNPs]$ date
+Wed Jan  4 06:33:40 PST 2017
+```
+Holy Cow!  The first 25 of those started immediately.  
+
+Some of these failed with the final statement being: 
+```
+   WARN  06:34:12,610 PairHMMLikelihoodCalculationEngine$1 - Failed to load native library for VectorLoglessPairHMM - using Java implementation of LOGLESS_CACHING
+```
+Aha! Checking the abort messages that get emailed to me, it looks like these guys ended up using too much memory.  They crumped 
+out with just over 8Gb.  So, I should up each thread to 3 Gb for 12 Gb total and try again... They were 1, 2, 7, 12, 14....so I will restart those.
+```{sh, eval=FALSE}
+[kruegg@n2168 SNPs]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Mykiss_all_preps/SNPs
+[kruegg@n2168 SNPs]$ rm 001.* 002.* 007.* 012.* 014.*
+
+[kruegg@n2168 SNPs]$ awk 'BEGIN {OFS="\t"} $1==1 || $1==2 || $1==7 || $1==12 || $1==14 {print ++n, $1, $2}' chromo_list.txt > chromo_redos.txt 
+[kruegg@n2168 SNPs]$ cat chromo_redos.txt 
+1	1	omy01
+2	2	omy02
+3	7	omy07
+4	12	omy12
+5	14	omy14
+
+```
+Now, I make another script that picks out the line from the first column of chromo_redos.txt and then 
+creates the output number (like 001) from the second column, and does the -L statement from the 3rd.
+Call this ``mykiss-scripts/05-call-snps-array-redo.sh`.   Try it:
+```{sh, eval=FALSE}
+[kruegg@n2168 SNPs]$ qsub ~/genoscape-bioinformatics/mykiss-scripts/05-call-snps-array-redo.sh 
+JSV: PE=shared
+Your job-array 1436659.1-5:1 ("snp-array") has been submitted
+[kruegg@n2168 SNPs]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Mykiss_all_preps/SNPs
+[kruegg@n2168 SNPs]$ date
+Wed Jan  4 07:26:26 PST 2017
+```
+That seems to be working now...
+
