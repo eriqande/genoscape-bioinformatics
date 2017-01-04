@@ -139,5 +139,122 @@ Your job 1433096 ("merge-bams") has been submitted
 ```
 
 
+## Indexing the Genome Fasta and creating a dictionary
+
+This is just a small step (takes a couple minutes, tops) that needs to happen before using GATK to call SNPs.
+```{sh, eval=FALSE}
+# login to a compute node
+[kruegg@login3 ~]$ qrsh
+
+# go to the genome
+[kruegg@n2168 ~]$ cd nobackup-klohmuel/Mykiss/Genome/
+[kruegg@n2168 Genome]$ ls
+Annotation              bowtie2-omyV6                                 unmapped_scaffoldsV6.fasta
+bowtie2-build-db.error  CIGENEomyV6-genes-longestTranscripts.gff3.gz
+bowtie2-build-db.log    omyV6Chr.fasta
+[kruegg@n2168 Genome]$ du -h omyV6Chr.fasta 
+1.9G	omyV6Chr.fasta
+
+# make a .fai with samtools faidx
+[kruegg@n2168 Genome]$ module load samtools
+[kruegg@n2168 Genome]$ samtools faidx omyV6Chr.fasta 
+
+# make a dictionary with Picard tools
+[kruegg@n2168 Genome]$ PICARD_JAR=/u/nobackup/klohmuel/kruegg/bin/picard.jar
+[kruegg@n2168 Genome]$ module load java
+[kruegg@n2168 Genome]$ java -jar $PICARD_JAR CreateSequenceDictionary R=omyV6Chr.fasta  O=omyV6Chr.dict
 
 
+```
+
+
+## Calling SNPs with GATK
+
+Now we are ready to go.  Because we have put the SM tags into each bam I am hoping that GATK will just call each individual
+from all of the reads it has across all libraries, seamlessly.
+
+### An experimental run
+
+At the moment, I am logged in to a compute node and I am going to try running this for one chromosome to see what it looks like...
+```{sh, eval=FALSE}
+[kruegg@n2168 SNP-trial-one]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Mykiss_all_preps/SNP-trial-one
+
+[kruegg@n2168 SNP-trial-one]$ module load java
+
+[kruegg@n2168 SNP-trial-one]$ GATK_JAR=/u/nobackup/klohmuel/kruegg/bin/GATK-nightly-11-29-16/GenomeAnalysisTK.jar
+[kruegg@n2168 SNP-trial-one]$ FASTA=../../Genome/omyV6Chr.fasta
+[kruegg@n2168 SNP-trial-one]$ BAM=../alignments/omyV6/MergedBams/omyV6-merged.bam
+[kruegg@n2168 SNP-trial-one]$ SEG=" -L omy01 "
+[kruegg@n2168 SNP-trial-one]$ OUT=001
+
+[kruegg@n2168 SNP-trial-one]$ java -Xmx4G -jar $GATK_JAR -T HaplotypeCaller \
+ -R $FASTA \
+ -I $BAM \
+ -stand_call_conf 20.0  \
+ -o $OUT.vcf --genotyping_mode DISCOVERY \
+  $SEG  > $OUT.stdout 2>$OUT.stderr
+
+# now have a look:
+[kruegg@n2168 SNP-trial-one]$ cat 001.stderr
+.
+.
+.
+INFO  05:33:22,269 ProgressMeter -     omy01:47142              0.0    30.0 s           50.4 w        0.1%    15.0 h      15.0 h 
+INFO  05:34:22,334 ProgressMeter -     omy01:47142              0.0    90.0 s          149.7 w        0.1%    45.0 h      45.0 h 
+INFO  05:35:22,364 ProgressMeter -    omy01:149793              0.0     2.5 m          249.0 w        0.2%    23.6 h      23.6 h 
+INFO  05:36:22,368 ProgressMeter -    omy01:149998              0.0     3.5 m          348.2 w        0.2%    33.0 h      33.0 h 
+INFO  05:37:22,376 ProgressMeter -    omy01:195857              0.0     4.5 m          447.4 w        0.2%    32.5 h      32.4 h 
+INFO  05:38:22,379 ProgressMeter -    omy01:195857              0.0     5.5 m          546.6 w        0.2%    39.7 h      39.6 h 
+INFO  05:39:22,389 ProgressMeter -    omy01:286963              0.0     6.5 m          645.8 w        0.3%    32.0 h      31.9 h 
+INFO  05:40:22,400 ProgressMeter -    omy01:340098              0.0     7.5 m          745.1 w        0.4%    31.2 h      31.1 h 
+INFO  05:41:22,408 ProgressMeter -    omy01:407906              0.0     8.5 m          844.3 w        0.5%    29.5 h      29.3 h 
+INFO  05:42:22,411 ProgressMeter -    omy01:465489              0.0     9.5 m          943.5 w        0.5%    28.9 h      28.7 h 
+INFO  05:43:22,418 ProgressMeter -    omy01:520171              0.0    10.5 m         1042.7 w        0.6%    28.6 h      28.4 h 
+
+```
+
+So, that thing is chugging along.  Barring any major troubles it looks like it would finish in between 1 and 2 days.  So, 
+I will consider running the each chromosome on 4 processors (-nct 4), and I will continue running it at -Xmx4G.  I will
+run these in the default queues that have a 24 hour time limit and hope that it will work.
+
+### Running it as a job array
+
+First, I make a tab-delimited file that holds the chromosomes, so I can do it in a job array:
+```{sh, eval=FALSE}
+[kruegg@n2168 SNPs]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Mykiss_all_preps/SNPs
+[kruegg@n2168 SNPs]$ samtools view -H $BAM | awk 'BEGIN {OFS="\t"} /@SQ/ {print ++n, $2}' | sed 's/SN://g' > chromo_list.txt 
+[kruegg@n2168 SNPs]$ cat chromo_list.txt 
+1	omy01
+2	omy02
+3	omy03
+4	omy04
+5	omy05
+6	omy06
+7	omy07
+8	omy08
+9	omy09
+10	omy10
+11	omy11
+12	omy12
+13	omy13
+14	omy14
+15	omy15
+16	omy16
+17	omy17
+18	omy18
+19	omy19
+20	omy20
+21	omy21
+22	omy22
+23	omy23
+24	omy24
+25	omy25
+26	omy26
+27	omy27
+28	omy28
+29	omy29
+```
+
+Then we make a script called `mykiss-scripts/05-call-snps-array.sh`.  

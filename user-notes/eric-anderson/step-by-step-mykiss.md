@@ -1,6 +1,6 @@
 Step-by-step Mykiss
 ================
-03 January, 2017
+04 January, 2017
 
 -   [Introduction](#introduction)
 -   [Build bowtie genome data base](#build-bowtie-genome-data-base)
