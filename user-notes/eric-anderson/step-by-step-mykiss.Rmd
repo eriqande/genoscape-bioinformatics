@@ -85,12 +85,58 @@ Fri Dec 30 04:56:10 PST 2016
 
 ```
 Holy Smokes!  There must be very little load on hoffman at the moment---all 242 jobs started straight away!
+(And the whole thing took about half an hour, as far as I can tell.)
 
 
+## Dup-filtering
 
+I am going to do this as a job array as well, using `samtools rmdup`.  There is a little setup for that:
+```{sh, eval=FALSE}
+[kruegg@n2194 bam]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Mykiss_all_preps/alignments/omyV6/bam
+# break it into 25 chunks of 10 files each
+[kruegg@n2194 bam]$ ls -l  *.bam | awk 'NR % 10 == 1 {printf("\n%d ",++n)} {printf(" %s", $NF);} END {printf("\n");}' > bamlist.txt 
+[kruegg@n2194 bam]$ head bamlist.txt 
 
+1  SOMM024_NoIndex_AAGACGTGCAGG.bam SOMM024_NoIndex_AAGCTATGCAGG.bam SOMM024_NoIndex_AATATCTGCAGG.bam SOMM024_NoIndex_AATGAGTGCAGG.bam SOMM024_NoIndex_ACATACTGCAGG.bam SOMM024_NoIndex_AGCGCATGCAGG.bam SOMM024_NoIndex_AGGGTCTGCAGG.bam SOMM024_NoIndex_AGGTGTTGCAGG.bam SOMM024_NoIndex_AGTAGGTGCAGG.bam SOMM024_NoIndex_ATCAAATGCAGG.bam
+2  SOMM024_NoIndex_CAATCGTGCAGG.bam SOMM024_NoIndex_CACCTCTGCAGG.bam SOMM024_NoIndex_CAGGCATGCAGG.bam SOMM024_NoIndex_CATACTTGCAGG.bam SOMM024_NoIndex_CCATTTTGCAGG.bam SOMM024_NoIndex_CCGAGGTGCAGG.bam SOMM024_NoIndex_CGCGTGTGCAGG.bam SOMM024_NoIndex_CGGTCCTGCAGG.bam SOMM024_NoIndex_CGTCTATGCAGG.bam SOMM024_NoIndex_CGTGATTGCAGG.bam
+3  SOMM024_NoIndex_CTACAGTGCAGG.bam SOMM024_NoIndex_CTGGTTTGCAGG.bam SOMM024_NoIndex_GACGACTGCAGG.bam SOMM024_NoIndex_GACTCTTGCAGG.bam SOMM024_NoIndex_GAGAGATGCAGG.bam SOMM024_NoIndex_GATCGTTGCAGG.bam SOMM024_NoIndex_GCAGATTGCAGG.bam SOMM024_NoIndex_GGGCGCTGCAGG.bam SOMM024_NoIndex_GGGGCGTGCAGG.bam SOMM024_NoIndex_GGTACATGCAGG.bam
+4  SOMM024_NoIndex_GGTTTGTGCAGG.bam SOMM024_NoIndex_TACACATGCAGG.bam SOMM024_NoIndex_TACGGGTGCAGG.bam SOMM024_NoIndex_TAGTATTGCAGG.bam SOMM024_NoIndex_TATCACTGCAGG.bam SOMM024_NoIndex_TCGATTTGCAGG.bam SOMM024_NoIndex_TGACAATGCAGG.bam SOMM024_NoIndex_TGCCCGTGCAGG.bam SOMM024_NoIndex_TGCTTATGCAGG.bam SOMM024_NoIndex_TGGGGATGCAGG.bam
+5  SOMM024_NoIndex_TTCTAGTGCAGG.bam SOMM025_NoIndex_ACCATGTGCAGG.bam SOMM025_NoIndex_ACCCCCTGCAGG.bam SOMM025_NoIndex_ATGCACTGCAGG.bam SOMM025_NoIndex_ATGTTGTGCAGG.bam SOMM025_NoIndex_CCGCATTGCAGG.bam SOMM025_NoIndex_CCTAACTGCAGG.bam SOMM025_NoIndex_CTTATGTGCAGG.bam SOMM025_NoIndex_CTTTGCTGCAGG.bam SOMM025_NoIndex_GCGCTGTGCAGG.bam
+6  SOMM025_NoIndex_GCTCAATGCAGG.bam SOMM025_NoIndex_GTGTAATGCAGG.bam SOMM025_NoIndex_GTTGGATGCAGG.bam SOMM025_NoIndex_TCGGACTGCAGG.bam SOMM025_NoIndex_TCTCGGTGCAGG.bam SOMM025_NoIndex_TTTAATTGCAGG.bam SOMM025_NoIndex_TTTGTCTGCAGG.bam SOMM049_Index02_AATATCTGCAGG.bam SOMM049_Index02_AATGAGTGCAGG.bam SOMM049_Index02_AGGTGTTGCAGG.bam
+7  SOMM049_Index02_AGTAGGTGCAGG.bam SOMM049_Index02_CATACTTGCAGG.bam SOMM049_Index02_CCATTTTGCAGG.bam SOMM049_Index02_CGTCTATGCAGG.bam SOMM049_Index02_CGTGATTGCAGG.bam SOMM049_Index02_CTACAGTGCAGG.bam SOMM049_Index02_GAGAGATGCAGG.bam SOMM049_Index02_GATCGTTGCAGG.bam SOMM049_Index02_GCAGATTGCAGG.bam SOMM049_Index02_GGTACATGCAGG.bam
+8  SOMM049_Index02_GGTTTGTGCAGG.bam SOMM049_Index02_TAGTATTGCAGG.bam SOMM049_Index02_TATCACTGCAGG.bam SOMM049_Index02_TGCTTATGCAGG.bam SOMM049_Index02_TGGGGATGCAGG.bam SOMM050_Index03_AAACGGTGCAGG.bam SOMM050_Index03_AACGTTTGCAGG.bam SOMM050_Index03_AACTGATGCAGG.bam SOMM050_Index03_AAGACGTGCAGG.bam SOMM050_Index03_AAGCTATGCAGG.bam
+9  SOMM050_Index03_AATATCTGCAGG.bam SOMM050_Index03_AATGAGTGCAGG.bam SOMM050_Index03_ACAAGATGCAGG.bam SOMM050_Index03_ACAGCGTGCAGG.bam SOMM050_Index03_ACATACTGCAGG.bam SOMM050_Index03_ACCATGTGCAGG.bam SOMM050_Index03_ACCCCCTGCAGG.bam SOMM050_Index03_ACTCTTTGCAGG.bam SOMM050_Index03_ACTGGCTGCAGG.bam SOMM050_Index03_AGCCATTGCAGG.bam
 
+```
 
+And with that done we can launch the job:
+```{sh, eval=FALSE}
+[kruegg@n2194 bam]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Mykiss_all_preps/alignments/omyV6/bam
+[kruegg@n2194 bam]$ qsub ~/genoscape-bioinformatics/mykiss-scripts/03-rmdup-alignments-job-array.sh 
+JSV: PE=shared
+Your job-array 1433016.1-25:1 ("rmdup") has been submitted
+[kruegg@n2194 bam]$ myjobs
+job-ID  prior   name       user         state submit/start at     queue                          slots ja-task-ID 
+-----------------------------------------------------------------------------------------------------------------
+1432822 0.00208 QRLOGIN    kruegg       r     01/03/2017 13:28:38 inter_msa.q@n2194                  1        
+1433016 0.00000 rmdup      kruegg       qw    01/03/2017 14:16:22                                    1 1-25:1
+
+```
+That takes about 10 minutes.
+
+## Merging the Bams
+
+We need to merge the deduped bams to prepare for GATK SNP calling.  I made a script to to this and I 
+launched it like:
+```{sh, eval=FALSE}
+[kruegg@n2194 omyV6]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Mykiss_all_preps/alignments/omyV6
+[kruegg@n2194 omyV6]$ qsub ~/genoscape-bioinformatics/mykiss-scripts/04-merge-bams.sh 
+JSV: PE=shared
+Your job 1433096 ("merge-bams") has been submitted
+```
 
 
 
