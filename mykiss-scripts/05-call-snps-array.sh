@@ -12,7 +12,7 @@
 
 
 
-
+source /u/local/Modules/default/init/modules.sh
 module load java
 
 GATK_JAR=/u/nobackup/klohmuel/kruegg/bin/GATK-nightly-11-29-16/GenomeAnalysisTK.jar
