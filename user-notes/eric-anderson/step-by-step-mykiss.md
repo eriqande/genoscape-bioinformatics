@@ -1,6 +1,6 @@
 Step-by-step Mykiss
 ================
-04 January, 2017
+05 January, 2017
 
 -   [Introduction](#introduction)
 -   [Build bowtie genome data base](#build-bowtie-genome-data-base)
@@ -11,6 +11,9 @@ Step-by-step Mykiss
 -   [Calling SNPs with GATK](#calling-snps-with-gatk)
     -   [An experimental run](#an-experimental-run)
     -   [Running it as a job array](#running-it-as-a-job-array)
+    -   [Merging SNPs](#merging-snps)
+    -   [Filtering SNPs](#filtering-snps)
+-   [Missing data visualize with genoscapeRtools](#missing-data-visualize-with-genoscapertools)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 Introduction
@@ -206,6 +209,8 @@ So, that thing is chugging along. Barring any major troubles it looks like it wo
 
 ### Running it as a job array
 
+**Note! I moved all the results of this section to `/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Mykiss_all_preps/SNPs/chromo_pieces` from `SNPs` **
+
 First, I make a tab-delimited file that holds the chromosomes, so I can do it in a job array:
 
 ``` sh
@@ -291,3 +296,83 @@ Wed Jan  4 07:26:26 PST 2017
 ```
 
 That seems to be working now...
+
+### Merging SNPs
+
+That job array got done in less than a day. Now we put all the relevant files into a separate directory called `chromo_pieces` and then merge the files with Picard tools.
+
+``` sh
+[kruegg@n2008 chromo_pieces]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Mykiss_all_preps/SNPs/chromo_pieces
+[kruegg@n2008 chromo_pieces]$ PICARD_JAR=/u/nobackup/klohmuel/kruegg/bin/picard.jar
+[kruegg@n2008 chromo_pieces]$ INPUTS=$(ls -l 0*.vcf | awk '{printf("I=%s ", $NF)}') 
+[kruegg@n2008 chromo_pieces]$ module load java
+[kruegg@n2008 chromo_pieces]$ java -jar $PICARD_JAR SortVcf $INPUTS O=full-omyV6.vcf
+...
+[kruegg@n2008 chromo_pieces]$ du -h full-omyV6.vcf
+1.2G    full-omyV6.vcf
+```
+
+That takes less than two minutes. So, we only have 1.2G of VCF file.
+That seems pretty small to me by comparison to the birds we have done. I moved that to: `/u/nobackup/klohmuel/kruegg/Mykiss/Mykiss_all_preps/SNPs/full-omyV6.vcf`.
+
+### Filtering SNPs
+
+Our filtering criteria:
+
+1.  No indels
+2.  Biallelic only
+3.  Minor allele frequency &gt; 0.01
+4.  minimum genotype quality = 30
+5.  minimum depth = 8
+6.  called in at least 10% of indivs
+
+We only require it be called in 10% of individuals because when I required 50% we got &lt;1000 sites. So, let's do that:
+
+``` sh
+[kruegg@n2008 SNPs]$ module load vcftools
+[kruegg@n2008 SNPs]$ vcftools --vcf full-omyV6.vcf --out full-omyV6-filtered  --remove-indels --min-alleles 2 --max-alleles 2 --maf 0.01  --minGQ 30 --minDP 8 --max-missing 0.1 --recode
+```
+
+This yields 83,314 sites.
+
+No wonder they use ANGSD---their data quality if crapola!
+
+So, let's make an 012 file
+
+    [kruegg@n2008 SNPs]$ vcftools --vcf full-omyV6-filtered.recode.vcf --out full-omyV6-filtered --012
+
+And I will bring that to my laptop:
+
+    /Users/eriq/Documents/UnsyncedData/Mykiss/full-omyV6-filtered.012.gz
+    /Users/eriq/Documents/UnsyncedData/Mykiss/full-omyV6-filtered.012.indv
+    /Users/eriq/Documents/UnsyncedData/Mykiss/full-omyV6-filtered.012.pos
+
+Missing data visualize with genoscapeRtools
+-------------------------------------------
+
+Let's have a look at how we are doing here:
+
+``` r
+library(genoscapeRtools)
+
+mykiss <- read_012("~/Documents/UnsyncedData/Mykiss/full-omyV6-filtered", gz = TRUE)
+
+indv <- miss_curves_indv(mykiss)
+indv$plot
+```
+
+![](mykiss-step-by-step-figs/miss-viz-1.png) Wow! That is serious gargbage!
+
+How about at the pos level?
+
+``` r
+loci <- miss_curves_locus(mykiss)
+loci$plot
+```
+
+![](mykiss-step-by-step-figs/posey-1.png)
+
+Gee, I have never seen data look so bad. If you want to see what things should look like with good data (Kristen's Zosterops data) check it out [here](https://github.com/eriqande/genoscapeRtools#doing-the-missing-data-calcs).
+
+I think I shall have to run through everything using Stacks' `clone_filter` (what we used with Zosterops) instead of using `samtools rmdup` to see if that gives any different results.
