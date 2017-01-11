@@ -1,6 +1,6 @@
 Step-by-step Mykiss
 ================
-05 January, 2017
+11 January, 2017
 
 -   [Introduction](#introduction)
 -   [Build bowtie genome data base](#build-bowtie-genome-data-base)
@@ -14,8 +14,26 @@ Step-by-step Mykiss
     -   [Merging SNPs](#merging-snps)
     -   [Filtering SNPs](#filtering-snps)
 -   [Missing data visualize with genoscapeRtools](#missing-data-visualize-with-genoscapertools)
+-   [A light filtering and then association test](#a-light-filtering-and-then-association-test)
+    -   [Assigning Phenotypes as Cases and Controls](#assigning-phenotypes-as-cases-and-controls)
+    -   [Running the association analyses](#running-the-association-analyses)
+    -   [Extract Indivs and Genos from the original vcf](#extract-indivs-and-genos-from-the-original-vcf)
+-   [Re-run everything but use Stacks' `clone_filter`](#re-run-everything-but-use-stacks-clone_filter)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+``` r
+library(tidyverse)
+#> Loading tidyverse: ggplot2
+#> Loading tidyverse: tibble
+#> Loading tidyverse: tidyr
+#> Loading tidyverse: readr
+#> Loading tidyverse: purrr
+#> Loading tidyverse: dplyr
+#> Conflicts with tidy packages ----------------------------------------------
+#> filter(): dplyr, stats
+#> lag():    dplyr, stats
+```
+
 Introduction
 ------------
 
@@ -376,3 +394,304 @@ loci$plot
 Gee, I have never seen data look so bad. If you want to see what things should look like with good data (Kristen's Zosterops data) check it out [here](https://github.com/eriqande/genoscapeRtools#doing-the-missing-data-calcs).
 
 I think I shall have to run through everything using Stacks' `clone_filter` (what we used with Zosterops) instead of using `samtools rmdup` to see if that gives any different results.
+
+A light filtering and then association test
+-------------------------------------------
+
+I do a super light filter:
+
+     vcftools --vcf full-omyV6.vcf --out light  --remove-indels --min-alleles 2 --max-alleles 2 --maf 0.05  --max-missing 0.1 --recode
+
+Which gives me about 250K SNPs which is in the ballpark of the 215K "Super high quality" ones that Mike claims. So, let's bring that to my laptop and then plink around with it:
+
+    # recode it into a plink file.  Be sure to double the IDs---otherwise it breaks them on the underscores.
+    2017-01-11 05:16 /Mykiss/--% pwd
+    /Users/eriq/Documents/UnsyncedData/Mykiss
+    2017-01-11 05:17 /Mykiss/--% plink --vcf light.recode.vcf.gz --aec --make-bed  --out mykiss-full-light --double-id
+
+Then filter that down even more. Toss individuals with more than 70% missing data and loci that are missing in more than 50% of the individuals. This gets me down to about 127K markers in 121 indivs:
+
+    2017-01-11 05:18 /Mykiss/--% plink --bfile mykiss-full-light --aec --mind 0.7 --geno 0.5   --make-bed --out mykiss-127K-121
+    PLINK v1.90b3.42 64-bit (20 Sep 2016)      https://www.cog-genomics.org/plink2
+    (C) 2005-2016 Shaun Purcell, Christopher Chang   GNU General Public License v3
+    Logging to mykiss-127K-121.log.
+    Options in effect:
+      --allow-extra-chr
+      --bfile mykiss-full-light
+      --geno 0.5
+      --make-bed
+      --mind 0.7
+      --out mykiss-127K-121
+
+    4096 MB RAM detected; reserving 2048 MB for main workspace.
+    248455 variants loaded from .bim file.
+    141 people (0 males, 0 females, 141 ambiguous) loaded from .fam.
+    Ambiguous sex IDs written to mykiss-127K-121.nosex .
+    20 people removed due to missing genotype data (--mind).
+    IDs written to mykiss-127K-121.irem .
+    Using 1 thread (no multithreaded calculations invoked).
+    Before main variant filters, 121 founders and 0 nonfounders present.
+    Calculating allele frequencies... done.
+    Total genotyping rate in remaining samples is 0.534269.
+    120840 variants removed due to missing genotype data (--geno).
+    127615 variants and 121 people pass filters and QC.
+    Note: No phenotypes present.
+    --make-bed to mykiss-127K-121.bed + mykiss-127K-121.bim + mykiss-127K-121.fam
+    ... done.
+
+That will be what I work from: `/Users/eriq/Documents/UnsyncedData/Mykiss/mykiss-127K-121.*`
+
+### Assigning Phenotypes as Cases and Controls
+
+We are going to do a separate association test for the Umpqua and another for the Eel. We need to figure out which IDs we need. This is a job for R:
+
+``` r
+# read in the meta data
+mykiss_meta <- readxl::read_excel(path = "../../mykiss-scripts/other_inputs/mykiss_meta.xls", sheet = 1)
+
+# whittle it down to eel and umpqua
+eel_all <- mykiss_meta %>%
+  filter(Location == "Eel River")
+umpqua_all <- mykiss_meta %>%
+  filter(Location == "North Umpqua River")
+
+# get a list of the individuals we have retained from the genomic data
+retained <- read_delim("/Users/eriq/Documents/UnsyncedData/Mykiss/mykiss-127K-121.fam", col_names = FALSE, delim = " ") %>%
+  select(X1) %>%
+  unlist() %>% unname()
+#> Parsed with column specification:
+#> cols(
+#>   X1 = col_character(),
+#>   X2 = col_character(),
+#>   X3 = col_integer(),
+#>   X4 = col_integer(),
+#>   X5 = col_integer(),
+#>   X6 = col_integer()
+#> )
+
+# then pick out only those retained indivs for each pop
+eel_retained <- eel_all %>%
+  filter(`Sample DNA ID` %in% retained)
+umpqua_retained <- umpqua_all %>%
+  filter(`Sample DNA ID` %in% retained)
+
+# now make some whitelists to pick those individuals out and some case/control lists.
+# we are going to designate the prematures as "cases"
+cat(eel_retained$`Sample DNA ID`, sep = "\n", file = "~/Documents/UnsyncedData/Mykiss/lists/eel_keep.txt")
+cat(umpqua_retained$`Sample DNA ID`, sep = "\n", file = "~/Documents/UnsyncedData/Mykiss/lists/umpqua_keep.txt")
+
+eel_retained %>%
+  filter(`Migration Category` == "Premature") %>%
+  mutate(a1 = `Sample DNA ID`, a2 = `Sample DNA ID`) %>%
+  select(a1, a2) %>% 
+  write.table(., quote = F, sep = " ", row.names = F, col.names = F, file = "~/Documents/UnsyncedData/Mykiss/lists/eel_cases.txt")
+
+umpqua_retained %>%
+  filter(`Migration Category` == "Premature") %>%
+  mutate(a1 = `Sample DNA ID`, a2 = `Sample DNA ID`) %>%
+  select(a1, a2) %>% 
+  write.table(., quote = F, sep = " ", row.names = F, col.names = F, file = "~/Documents/UnsyncedData/Mykiss/lists/umpqua_cases.txt")
+```
+
+### Running the association analyses
+
+First we make a file of umpqua and eel fish:
+
+``` sh
+2017-01-11 05:59 /Mykiss/--% pwd
+/Users/eriq/Documents/UnsyncedData/Mykiss
+2017-01-11 05:59 /Mykiss/--% plink -bfile mykiss-127K-121 --keep-fam lists/eel_keep.txt --make-bed --out eel --aec
+2017-01-11 05:59 /Mykiss/--% plink -bfile mykiss-127K-121 --keep-fam lists/umpqua_keep.txt --make-bed --out umpqua --aec
+```
+
+#### Eel
+
+Then, let's run a quick association test on eel:
+
+``` sh
+2017-01-11 06:16 /Mykiss/--% pwd
+/Users/eriq/Documents/UnsyncedData/Mykiss
+2017-01-11 06:16 /Mykiss/--% plink -bfile eel  --aec --make-pheno lists/eel_cases.txt '*'  --assoc fisher --out eel_ass --allow-no-sex
+```
+
+and have a look at that
+
+``` r
+# readr's read_table barfs on this somehow!
+eel_ass <- read.table("~/Documents/UnsyncedData/Mykiss/eel_ass.assoc.fisher", header=T, stringsAsFactors = F)
+arrange(eel_ass, P) %>%
+  head(n=20)
+#>      CHR SNP       BP A1     F_A     F_U A2         P        OR
+#> 1  omy28   . 11667915  G 0.04348 1.00000  A 2.206e-18  0.000000
+#> 2  omy28   . 11667773  C 0.04762 1.00000  T 1.556e-17  0.000000
+#> 3  omy28   . 11667954  A 0.06522 1.00000  G 2.280e-17  0.000000
+#> 4  omy28   . 11609825  C 0.05882 1.00000  T 1.288e-13  0.000000
+#> 5  omy28   . 11668031  C 0.04762 1.00000  A 1.913e-12  0.000000
+#> 6  omy28   . 11613335  T 0.04545 1.00000  G 1.183e-11  0.000000
+#> 7  omy28   . 11613402  G 0.04545 1.00000  A 1.183e-11  0.000000
+#> 8  omy09   . 24689141  T 0.76470 0.00000  C 3.828e-11        NA
+#> 9  omy28   . 11667682  T 0.00000 1.00000  A 9.043e-11  0.000000
+#> 10 omy25   . 61217332  C 0.17390 0.90000  T 2.010e-10  0.023390
+#> 11 omy28   . 11384594  T 0.10870 0.80000  C 1.016e-09  0.030490
+#> 12 omy08   . 27834312  A 0.13330 0.95450  G 1.569e-09  0.007326
+#> 13 omy05   . 27799832  A 0.03571 1.00000  C 2.327e-09  0.000000
+#> 14 omy01   . 52663649  A 0.16670 1.00000  C 4.603e-09  0.000000
+#> 15 omy28   .  8516469  T 0.00000 0.61540  C 6.210e-09  0.000000
+#> 16 omy25   . 71388201  T 0.07895 0.79170  C 1.067e-08  0.022560
+#> 17 omy04   . 40832954  T 0.63040 0.03125  C 1.795e-08 52.880000
+#> 18 omy08   . 43248763  A 0.00000 0.56250  G 2.032e-08  0.000000
+#> 19 omy01   . 51241613  C 0.16670 0.81250  A 2.433e-08  0.046150
+#> 20 omy27   .  1579646  T 0.70590 0.00000  G 3.260e-08        NA
+```
+
+Whoop! There they are!
+
+#### Umpqua
+
+Same drill:
+
+``` sh
+2017-01-11 06:32 /Mykiss/--% plink -bfile umpqua  --aec --make-pheno lists/umpqua_cases.txt '*'  --assoc fisher --out ump_ass --allow-no-sex
+```
+
+and have a look at that
+
+``` r
+# for some reason read_table doesn't correctly read the scientific notation...
+ump_ass <- read.table("~/Documents/UnsyncedData/Mykiss/ump_ass.assoc.fisher", header=T, stringsAsFactors = F) %>%
+  tbl_df
+arrange(ump_ass, P) %>%
+  head(n=20)
+#> # A tibble: 20 x 9
+#>      CHR   SNP       BP    A1     F_A     F_U    A2         P        OR
+#>    <chr> <chr>    <int> <chr>   <dbl>   <dbl> <chr>     <dbl>     <dbl>
+#> 1  omy28     . 11667915     A 1.00000 0.06522     G 9.257e-21        NA
+#> 2  omy28     . 11667954     G 1.00000 0.06522     A 9.257e-21        NA
+#> 3  omy28     . 11613335     T 0.00000 0.89470     G 3.248e-17 0.000e+00
+#> 4  omy28     . 11613402     G 0.00000 0.89470     A 3.248e-17 0.000e+00
+#> 5  omy28     . 11609825     T 1.00000 0.07895     C 3.052e-16        NA
+#> 6  omy28     . 11667837     T 0.94440 0.09091     A 9.555e-16 1.700e+02
+#> 7  omy28     . 11668031     C 0.00000 0.87500     A 3.607e-15 0.000e+00
+#> 8  omy28     . 11667682     T 0.00000 0.92310     A 7.463e-14 0.000e+00
+#> 9  omy28     . 11589054     C 0.06250 0.90620     T 2.787e-12 6.897e-03
+#> 10 omy28     . 11667773     T 0.83330 0.08696     C 2.795e-12 5.250e+01
+#> 11 omy28     . 11803846     T 0.02632 0.73910     G 2.910e-12 9.539e-03
+#> 12 omy28     . 11613233     G 0.00000 0.85000     A 2.418e-11 0.000e+00
+#> 13 omy28     . 11613481     A 0.00000 0.79170     C 4.487e-11 0.000e+00
+#> 14 omy28     . 11613427     T 0.00000 0.88460     A 8.483e-11 0.000e+00
+#> 15 omy28     . 11613225     C 0.00000 0.80000     T 2.297e-10 0.000e+00
+#> 16 omy28     . 11803870     C 0.02632 0.65220     T 4.830e-10 1.441e-02
+#> 17 omy28     . 11985747     T 0.73330 0.05000     C 1.325e-09 5.225e+01
+#> 18 omy28     . 11613146     G 0.00000 0.85710     A 2.339e-09 0.000e+00
+#> 19 omy28     . 12179107     T 0.77780 0.10530     G 3.912e-09 2.975e+01
+#> 20 omy28     . 11609793     A 0.00000 0.52170     G 1.341e-08 0.000e+00
+```
+
+And those things look like they correspond to what Mike found. Good.
+
+### Extract Indivs and Genos from the original vcf
+
+I am curious about how much data (how many reads, etc) we actually have at these positions. Let's just take the top 20 positions from each species and then take the intersection of those.
+
+``` r
+hi_rollers <- list(
+  umpqua = head(arrange(ump_ass, P), n = 20),
+  eel = head(arrange(eel_ass, P), n = 20)) %>%
+  bind_rows(.id = "pop")
+
+# write out the CHROM and POS that we wish to extract
+hi_rollers %>%
+  group_by(CHR, BP) %>%
+  tally() %>%
+  filter(n == 2) %>%
+  select(CHR, BP) %>%
+  write.table(., row.names = F, col.names = F, quote = F, file = "outputs/shared_assoc_snps.txt", sep = "\t")
+
+# and also get the indivs that we used
+cat(c(eel_retained$`Sample DNA ID`, umpqua_retained$`Sample DNA ID`), sep = "\n", file = "outputs/assoc_study_ids.txt")
+```
+
+and then get that with vcftools
+
+``` sh
+2017-01-11 13:45 /Mykiss/--% vcftools --gzvcf light.recode.vcf.gz --keep ~/Documents/git-repos/genoscape-bioinformatics/user-notes/eric-anderson/outputs/assoc_study_ids.txt --positions  ~/Documents/git-repos/genoscape-bioinformatics/user-notes/eric-anderson/outputs/shared_assoc_snps.txt --recode --out shared-assoc-8-snps
+```
+
+And then we can read that with vcfR
+
+``` r
+library(vcfR)
+#> 
+#>    *****       ***   vcfR   ***       *****
+#>    This is vcfR 1.4.0 
+#>      browseVignettes('vcfR') # Documentation
+#>      citation('vcfR') # Citation
+#>    *****       *****      *****       *****
+
+vcf <- read.vcfR("~/Documents/UnsyncedData/Mykiss/shared-assoc-8-snps.recode.vcf")
+#> 
+Meta line 56 read in.
+#> All meta lines processed.
+#> Character matrix gt created.
+#> Character matrix gt rows: 8
+#> Character matrix gt cols: 91
+#> skip: 0
+#> nrows: 8
+#> row_num: 0
+#> 
+#> 
+Processed variant: 8
+#> All variants processed
+
+tmp <- vcfR2tidy(vcf, single_frame = TRUE)
+#> Extracting gt element AD
+#> Extracting gt element DP
+#> Extracting gt element GQ
+#> Extracting gt element GT
+#> Extracting gt element PL
+genos <- tmp$dat %>%
+  select(-ID, -(FILTER:SOR))  %>%
+  left_join(., mykiss_meta, by = c(Indiv = "Sample DNA ID")) %>%
+  select(CHROM:gt_GT_alleles,`Migration Category`, everything())
+
+# and write those to an output file
+write_csv(genos, path = "outputs/assoc-snps-info.csv")
+```
+
+Re-run everything but use Stacks' `clone_filter`
+------------------------------------------------
+
+This is less relevant, since I found the association with the data filtered with samtools.
+
+OK, I am going to make some job-array versions of these. I have the mykiss IDs, but I am going to want to send these jobs off with about 10 files at a time, so I will make a new file that has the file name prefixes, 10 to a line:
+
+``` sh
+2017-01-06 06:31 /mykiss-scripts/--% (master) pwd
+/Users/eriq/Documents/git-repos/genoscape-bioinformatics/mykiss-scripts
+2017-01-06 06:31 /mykiss-scripts/--% (master) cat mykiss_ids.txt | awk '$1 % 10 == 1 {printf("\n%d ",++n)} {printf(" %s", $2);} END {printf("\n");}' > mykiss_files_in_25_rows.txt 
+```
+
+That makes the file `mykiss_files_in_25_rows.txt` that looks like:
+
+    2017-01-06 06:35 /mykiss-scripts/--% (master) head -5 mykiss_files_in_25_rows.txt 
+     ID
+    1  SOMM024_NoIndex_AAGACGTGCAGG SOMM024_NoIndex_AAGCTATGCAGG SOMM024_NoIndex_AATATCTGCAGG SOMM024_NoIndex_AATGAGTGCAGG SOMM024_NoIndex_ACATACTGCAGG SOMM024_NoIndex_AGCGCATGCAGG SOMM024_NoIndex_AGGGTCTGCAGG SOMM024_NoIndex_AGGTGTTGCAGG SOMM024_NoIndex_AGTAGGTGCAGG SOMM024_NoIndex_ATCAAATGCAGG
+    2  SOMM024_NoIndex_CAATCGTGCAGG SOMM024_NoIndex_CACCTCTGCAGG SOMM024_NoIndex_CAGGCATGCAGG SOMM024_NoIndex_CATACTTGCAGG SOMM024_NoIndex_CCATTTTGCAGG SOMM024_NoIndex_CCGAGGTGCAGG SOMM024_NoIndex_CGCGTGTGCAGG SOMM024_NoIndex_CGGTCCTGCAGG SOMM024_NoIndex_CGTCTATGCAGG SOMM024_NoIndex_CGTGATTGCAGG
+    3  SOMM024_NoIndex_CTACAGTGCAGG SOMM024_NoIndex_CTGGTTTGCAGG SOMM024_NoIndex_GACGACTGCAGG SOMM024_NoIndex_GACTCTTGCAGG SOMM024_NoIndex_GAGAGATGCAGG SOMM024_NoIndex_GATCGTTGCAGG SOMM024_NoIndex_GCAGATTGCAGG SOMM024_NoIndex_GGGCGCTGCAGG SOMM024_NoIndex_GGGGCGTGCAGG SOMM024_NoIndex_GGTACATGCAGG
+    4  SOMM024_NoIndex_GGTTTGTGCAGG SOMM024_NoIndex_TACACATGCAGG SOMM024_NoIndex_TACGGGTGCAGG SOMM024_NoIndex_TAGTATTGCAGG SOMM024_NoIndex_TATCACTGCAGG SOMM024_NoIndex_TCGATTTGCAGG SOMM024_NoIndex_TGACAATGCAGG SOMM024_NoIndex_TGCCCGTGCAGG SOMM024_NoIndex_TGCTTATGCAGG SOMM024_NoIndex_TGGGGATGCAGG
+
+Now, we make the script `/mykiss-scripts/cf-01-clone-filter.sh` to use that in a job array. We call it with the 25-line file and the name of the output directory we want.
+
+``` sh
+[kruegg@n2236 RAD_sequence]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Prince_etal_raw/RAD_sequence
+[kruegg@n2236 RAD_sequence]$ mkdir ../../Mykiss_all_preps/clone_filtered/
+
+[kruegg@n2236 RAD_sequence]$ qsub ~/genoscape-bioinformatics/mykiss-scripts/cf-01-clone-filter.sh ~/genoscape-bioinformatics/mykiss-scripts/mykiss_files_in_25_rows.txt  ../../Mykiss_all_preps/clone_filtered
+JSV: PE=shared
+Your job-array 1444235.1-25:1 ("clone_filter") has been submitted
+[kruegg@n2236 RAD_sequence]$ date
+Fri Jan  6 07:06:00 PST 2017
+```
+
+That took about 27 minutes total.
