@@ -1,6 +1,6 @@
 Step-by-step Mykiss
 ================
-11 January, 2017
+13 January, 2017
 
 -   [Introduction](#introduction)
 -   [Build bowtie genome data base](#build-bowtie-genome-data-base)
@@ -18,6 +18,8 @@ Step-by-step Mykiss
     -   [Assigning Phenotypes as Cases and Controls](#assigning-phenotypes-as-cases-and-controls)
     -   [Running the association analyses](#running-the-association-analyses)
     -   [Extract Indivs and Genos from the original vcf](#extract-indivs-and-genos-from-the-original-vcf)
+    -   [Figure out how positions in OmyV6 correspond to Mike's scaffold positions](#figure-out-how-positions-in-omyv6-correspond-to-mikes-scaffold-positions)
+    -   [Get some sequence around 11613270](#get-some-sequence-around-11613270)
 -   [Re-run everything but use Stacks' `clone_filter`](#re-run-everything-but-use-stacks-clone_filter)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -562,7 +564,7 @@ ump_ass <- read.table("~/Documents/UnsyncedData/Mykiss/ump_ass.assoc.fisher", he
   tbl_df
 arrange(ump_ass, P) %>%
   head(n=20)
-#> # A tibble: 20 x 9
+#> # A tibble: 20 × 9
 #>      CHR   SNP       BP    A1     F_A     F_U    A2         P        OR
 #>    <chr> <chr>    <int> <chr>   <dbl>   <dbl> <chr>     <dbl>     <dbl>
 #> 1  omy28     . 11667915     A 1.00000 0.06522     G 9.257e-21        NA
@@ -657,6 +659,253 @@ genos <- tmp$dat %>%
 # and write those to an output file
 write_csv(genos, path = "outputs/assoc-snps-info.csv")
 ```
+
+### Figure out how positions in OmyV6 correspond to Mike's scaffold positions
+
+It should be instructive to see where these SNPs fit relative to the ones that Prince et al. found in steelhead. There are 17 SNPs in that region listed in the Prince et al. supplement. I am hoping that positions on the scaffold are just translated from where they are in omyV6, so we can just add or subtract the appropriate amount. To see what that appropriate amount might be, let's make a quick matrix of position distances to see how the SNPs mike found might correspond to ours:
+
+``` r
+# first, get the positions of 22 or so omy28 SNPs and order by BP
+v6_pos <- hi_rollers %>% 
+  filter(CHR == "omy28") %>% 
+  group_by(BP) %>% 
+  tally() %>%
+  select(BP) %>% unlist() %>% unname
+names(v6_pos) <- v6_pos
+
+# now get the positions of Prince et al steelhead SNPs on their scaffold:
+prince_pos <- readxl::read_excel("../../mykiss-scripts/other_inputs/mykiss_meta.xls", sheet = 3) %>%
+  select(`Scaffold79929e Position`) %>%
+  unlist() %>%
+  unname()
+names(prince_pos) <- prince_pos
+
+diffmat <- outer(v6_pos, prince_pos, "-")
+```
+
+Now, if you look at all the differences between v6\_pos and prince\_pos you find that there are some differences that are seen more frequently than others:
+
+``` r
+sort(table(diffmat), decreasing = TRUE)[1:10]
+#> diffmat
+#> 11018487 11018149 10963883 11017198 11023641  7736240  7736264  7866925 
+#>        6        4        2        2        2        1        1        1 
+#>  7867002  7867041 
+#>        1        1
+```
+
+Aha! So clearly 11018487 and 11018149 are possible translations. And there are a few others which have more than 1. Let's get a vector of all those with more than 1 occurrence
+
+``` r
+tmp <- sort(table(diffmat), decreasing = TRUE)[1:10]
+poss_n <- tmp[tmp > 1]
+poss <- as.integer(rownames(poss_n))
+```
+
+Now we can make a matrix showing which of these pairs have a distance apart which is one of those multiple ones:
+
+``` r
+cmat <- diffmat %in% poss %>% matrix(nrow = nrow(diffmat))
+dimnames(cmat) <- dimnames(diffmat)
+cmat
+#>          568978 592595 592596 592627 595076 595084 595186 595253 649195
+#> 8516469   FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11384594  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11589054  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11609793  FALSE   TRUE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11609825  FALSE  FALSE  FALSE   TRUE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11613146  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11613225  FALSE  FALSE  FALSE  FALSE   TRUE  FALSE  FALSE  FALSE  FALSE
+#> 11613233  FALSE  FALSE  FALSE  FALSE  FALSE   TRUE  FALSE  FALSE  FALSE
+#> 11613335  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE   TRUE  FALSE  FALSE
+#> 11613402  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE   TRUE  FALSE
+#> 11613427  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11613481  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11667682  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE   TRUE
+#> 11667773  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11667837  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11667915  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11667954  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11668031  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11803846  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11803870  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11985747  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 12179107  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#>          649286 649350 649428 649467 649544 780205 780229
+#> 8516469   FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11384594  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11589054  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11609793  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11609825  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11613146  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11613225  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11613233  FALSE   TRUE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11613335  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11613402  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11613427  FALSE  FALSE  FALSE  FALSE   TRUE  FALSE  FALSE
+#> 11613481  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11667682  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11667773   TRUE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11667837  FALSE   TRUE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 11667915  FALSE  FALSE   TRUE  FALSE  FALSE  FALSE  FALSE
+#> 11667954  FALSE  FALSE  FALSE   TRUE  FALSE  FALSE  FALSE
+#> 11668031  FALSE  FALSE  FALSE  FALSE   TRUE  FALSE  FALSE
+#> 11803846  FALSE  FALSE  FALSE  FALSE  FALSE   TRUE  FALSE
+#> 11803870  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE   TRUE
+#> 11985747  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+#> 12179107  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE
+```
+
+So, those are mostly near the diagonal, but there are a couple off the diagonal, (and one row with two!) so that must be spurious. Let's look at it with the actual differences in there (for the ones we want to look at)
+
+``` r
+cmat * diffmat
+#>          568978   592595 592596   592627   595076   595084   595186
+#> 8516469       0        0      0        0        0        0        0
+#> 11384594      0        0      0        0        0        0        0
+#> 11589054      0        0      0        0        0        0        0
+#> 11609793      0 11017198      0        0        0        0        0
+#> 11609825      0        0      0 11017198        0        0        0
+#> 11613146      0        0      0        0        0        0        0
+#> 11613225      0        0      0        0 11018149        0        0
+#> 11613233      0        0      0        0        0 11018149        0
+#> 11613335      0        0      0        0        0        0 11018149
+#> 11613402      0        0      0        0        0        0        0
+#> 11613427      0        0      0        0        0        0        0
+#> 11613481      0        0      0        0        0        0        0
+#> 11667682      0        0      0        0        0        0        0
+#> 11667773      0        0      0        0        0        0        0
+#> 11667837      0        0      0        0        0        0        0
+#> 11667915      0        0      0        0        0        0        0
+#> 11667954      0        0      0        0        0        0        0
+#> 11668031      0        0      0        0        0        0        0
+#> 11803846      0        0      0        0        0        0        0
+#> 11803870      0        0      0        0        0        0        0
+#> 11985747      0        0      0        0        0        0        0
+#> 12179107      0        0      0        0        0        0        0
+#>            595253   649195   649286   649350   649428   649467   649544
+#> 8516469         0        0        0        0        0        0        0
+#> 11384594        0        0        0        0        0        0        0
+#> 11589054        0        0        0        0        0        0        0
+#> 11609793        0        0        0        0        0        0        0
+#> 11609825        0        0        0        0        0        0        0
+#> 11613146        0        0        0        0        0        0        0
+#> 11613225        0        0        0        0        0        0        0
+#> 11613233        0        0        0 10963883        0        0        0
+#> 11613335        0        0        0        0        0        0        0
+#> 11613402 11018149        0        0        0        0        0        0
+#> 11613427        0        0        0        0        0        0 10963883
+#> 11613481        0        0        0        0        0        0        0
+#> 11667682        0 11018487        0        0        0        0        0
+#> 11667773        0        0 11018487        0        0        0        0
+#> 11667837        0        0        0 11018487        0        0        0
+#> 11667915        0        0        0        0 11018487        0        0
+#> 11667954        0        0        0        0        0 11018487        0
+#> 11668031        0        0        0        0        0        0 11018487
+#> 11803846        0        0        0        0        0        0        0
+#> 11803870        0        0        0        0        0        0        0
+#> 11985747        0        0        0        0        0        0        0
+#> 12179107        0        0        0        0        0        0        0
+#>            780205   780229
+#> 8516469         0        0
+#> 11384594        0        0
+#> 11589054        0        0
+#> 11609793        0        0
+#> 11609825        0        0
+#> 11613146        0        0
+#> 11613225        0        0
+#> 11613233        0        0
+#> 11613335        0        0
+#> 11613402        0        0
+#> 11613427        0        0
+#> 11613481        0        0
+#> 11667682        0        0
+#> 11667773        0        0
+#> 11667837        0        0
+#> 11667915        0        0
+#> 11667954        0        0
+#> 11668031        0        0
+#> 11803846 11023641        0
+#> 11803870        0 11023641
+#> 11985747        0        0
+#> 12179107        0        0
+```
+
+OK, 10963883 is a spurious translation, but the others look good, so let us pick all those out
+
+``` r
+poss2 <- poss[poss != 10963883]
+tfmat <- diffmat %in% poss2 %>% matrix(nrow = nrow(diffmat))
+dimnames(tfmat) <- dimnames(diffmat)
+
+# and make a data frame of it
+data_frame(
+  omyV6 = as.integer(rownames(tfmat)[rowSums(tfmat) > 0]),
+  prince = as.integer(colnames(tfmat)[colSums(tfmat) > 0]) 
+  ) %>%
+  mutate(add_to_prince_to_get_omyV6_pos = omyV6 - prince)
+#> # A tibble: 14 × 3
+#>       omyV6 prince add_to_prince_to_get_omyV6_pos
+#>       <int>  <int>                          <int>
+#> 1  11609793 592595                       11017198
+#> 2  11609825 592627                       11017198
+#> 3  11613225 595076                       11018149
+#> 4  11613233 595084                       11018149
+#> 5  11613335 595186                       11018149
+#> 6  11613402 595253                       11018149
+#> 7  11667682 649195                       11018487
+#> 8  11667773 649286                       11018487
+#> 9  11667837 649350                       11018487
+#> 10 11667915 649428                       11018487
+#> 11 11667954 649467                       11018487
+#> 12 11668031 649544                       11018487
+#> 13 11803846 780205                       11023641
+#> 14 11803870 780229                       11023641
+```
+
+And that is really the final story there. It shows us that there appears to not be a consistent translation between Mike's Scaffold79929e Position and the OmyV6-genome position.
+
+So, it might be hard to use these results to really clean up the problems with Sanger sequencing the chinook. But all is not yet lost: one of the chinook SNPs is at 595121 (with an association P-value of 1.69e-10---the second-lowest of the chinook SNPs) which happens to be between the above steelhead SNPs at 595084 and 595186 on Mike's scaffold. And those positions share the same offset to omyV6: 11018149. So, if we want to find that Chinook position on the omyV6 genome, it should be at location 595121 + 11018149 = 11613270. Booyah!
+
+### Get some sequence around 11613270
+
+So, let us extract 500 bp around either side of that SNP so that we can design primers to do some sequencing at it. So with samtools faidx we will want to pick out:
+
+``` r
+paste(11613270 + c(-499, 500), collapse = "-") %>%
+  paste("omy28", ., sep = ":")
+#> [1] "omy28:11612771-11613770"
+```
+
+I have previously made the index, so that should be one simple command:
+
+    [kruegg@login1 Genome]$ pwd
+    /u/home/k/kruegg/nobackup-klohmuel/Mykiss/Genome
+    [kruegg@login1 Genome]$ samtools faidx omyV6Chr.fasta omy28:11612771-11613770
+    >omy28:11612771-11613770
+    GCAGGTGGGGGTGTCTGCAACCAGGAGAGGAGAGGTGGTGGTGTTAGATGTGTCAAGGCA
+    GGTTTGGTGTCCAGGTGAACTGGTTGAGCAGCTTTTGGGGGAGCTGGTCAAGCATGGGCT
+    TTCTGATGATCTTGAACTTAAACTTTTAAAAATTGTTGATATGTAAGAAATAAAATAAAA
+    ATGAAAGATGTGTGTGTATATATATATATATATATACATGTTTGACTTTTATGACAGAGA
+    GTGTGTGAGAGAGAGGAAGTCCCTAAACCTCCTTAGGTCCCTTTCAGACAATTTTTGTAC
+    AGCGTGAACACTCCAAAGGAACTCAGACCCTTCAAAAGAGCCCCCAGAGAGGCCTCCCGA
+    GTGGTGCAGCGGTCTAAGGCACTGCATTGCAGTGTTGCGGGGTCACTACCGGCTGTGACC
+    GGGAGTCCTATAGGGCGGCGCACAATTGGCCCAGTGTCTTCCAGGTTTAGGGGAGGGTTT
+    GGCCAGGGGGACTTTACTTGGCACATCGTGCTCTAGCGACTCCTTGTGGCAGGCCGGGCA
+    CCTGCAGGCTGACTTCGGTCGTCAGTTGAGCGGTGTTTCCTCCTACACATTGGTGCAGCT
+    GGCTTCTGGGTTAAGCGAAGGGGGGTTAAGAAGCGCGGTTTGGCAGTGTTAAGATAATGG
+    GCATAATGCCAACCCAGAGATGGCGCTAGTGGGGCACCTATCTAGGATATCTAAACAGAC
+    CTGTAACTTGTAAGGAAAGGATTATGCTTGCAGTTGACCAAACTCTCCGATGTGAGTCAT
+    TCGCATACAGATAATAACATGGTGTCAGAACTGGGATTTGAACCCACGCCTCCAATCGGA
+    GACCAGAACCATGCTACTCAGTTTGAAGATGTGAACCATGCTACTGATCAAACCATCGCC
+    CCGCAGACACGGTGTAACGATGTGCGCTGGGAGTCGGGAAGCAAGTTCAGGGAGTGAATG
+    TTTGAATAAATAAAAGAAACACGTGAACACAAAACACAAA
+
+Cool. Position 500 in that is supposedly migration-associated G/A SNP. It is a G in this steelhead reference sequence.
+
+So, I have saved that
+
+    [kruegg@login1 Genome]$ samtools faidx omyV6Chr.fasta omy28:11612771-11613770 > ../chinook_sanger_primer_design/Scaffold79929e_595121
 
 Re-run everything but use Stacks' `clone_filter`
 ------------------------------------------------
