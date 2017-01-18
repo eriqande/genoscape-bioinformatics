@@ -1,6 +1,6 @@
 Step-by-step Chinook
 ================
-17 January, 2017
+18 January, 2017
 
 -   [Introduction](#introduction)
 -   [Mapping](#mapping)
@@ -8,6 +8,12 @@ Step-by-step Chinook
 -   [Merging Bams](#merging-bams)
 -   [Indexing the Genome Fasta and creating a dictionary](#indexing-the-genome-fasta-and-creating-a-dictionary)
 -   [Calling SNPs with GATK](#calling-snps-with-gatk)
+    -   [Light SNP Filtering](#light-snp-filtering)
+-   [Association Test Stuff](#association-test-stuff)
+    -   [Further filtering](#further-filtering)
+    -   [Defining cases](#defining-cases)
+    -   [Association Test](#association-test)
+    -   [Looking at the results](#looking-at-the-results)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 ``` r
@@ -136,6 +142,8 @@ Your job 1511200 ("merge-bams") has been submitted
 Tue Jan 17 11:14:19 PST 2017
 ```
 
+That took almost 2 hours.
+
 Indexing the Genome Fasta and creating a dictionary
 ---------------------------------------------------
 
@@ -143,3 +151,315 @@ This was already done for mykiss. So, no need to do it over here.
 
 Calling SNPs with GATK
 ----------------------
+
+Make a SNPs directory and get prepared.
+
+``` sh
+[kruegg@login2 Chinook_all_preps]$ mkdir SNPs
+[kruegg@login2 Chinook_all_preps]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Chinook_all_preps
+
+[kruegg@login2 Chinook_all_preps]$ cd SNPs/
+[kruegg@login2 SNPs]$ module load samtools
+[kruegg@login2 SNPs]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Chinook_all_preps/SNPs
+
+[kruegg@login2 SNPs]$ BAM=../alignments/omyV6/MergedBams/omyV6-merged.bam
+
+[kruegg@login2 SNPs]$ samtools view -H $BAM | awk 'BEGIN {OFS="\t"} /@SQ/ {print ++n, $2}' | sed 's/SN://g' > chromo_list.txt 
+[kruegg@login2 SNPs]$ head chromo_list.txt 
+1   omy01
+2   omy02
+3   omy03
+4   omy04
+5   omy05
+6   omy06
+7   omy07
+8   omy08
+9   omy09
+10  omy10
+```
+
+Then launch that dude:
+
+``` sh
+[kruegg@login2 SNPs]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Chinook_all_preps/SNPs
+[kruegg@login2 SNPs]$ qsub ~/genoscape-bioinformatics/chinook-scripts/05-chinook-call-snps-array.sh 
+JSV: PE=shared
+Your job-array 1512271.1-29:1 ("snp-array") has been submitted
+[kruegg@login2 SNPs]$ date
+Tue Jan 17 13:09:13 PST 2017
+```
+
+It looks like it is only going to launch four nodes at once. Probably much higher load on hoffman than when I did the mykiss. But then it launched a bunch and finished quite quickly.
+
+After it ran, I moved all the output (and input) to `/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Chinook_all_preps/SNPs/chromo_pieces`.
+
+``` sh
+[kruegg@n2192 SNPs]$ pwd 
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Chinook_all_preps/SNPs
+[kruegg@n2192 SNPs]$ mkdir chromo_pieces
+[kruegg@n2192 SNPs]$ mv * chromo_pieces/
+mv: cannot move `chromo_pieces' to a subdirectory of itself, `chromo_pieces/chromo_pieces'
+[kruegg@n2192 SNPs]$ ls
+chromo_pieces
+```
+
+And then, on a compute node, I merged everything into a single merged vcf:
+
+``` sh
+[kruegg@n2192 chromo_pieces]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Chinook_all_preps/SNPs/chromo_pieces
+[kruegg@n2192 chromo_pieces]$ PICARD_JAR=/u/nobackup/klohmuel/kruegg/bin/picard.jar
+[kruegg@n2192 chromo_pieces]$ INPUTS=$(ls -l 0*.vcf | awk '{printf("I=%s ", $NF)}') 
+[kruegg@n2192 chromo_pieces]$ echo $INPUTS
+I=001.vcf I=002.vcf I=003.vcf I=004.vcf I=005.vcf I=006.vcf I=007.vcf I=008.vcf I=009.vcf I=010.vcf I=011.vcf I=012.vcf I=013.vcf I=014.vcf I=015.vcf I=016.vcf I=017.vcf I=018.vcf I=019.vcf I=020.vcf I=021.vcf I=022.vcf I=023.vcf I=024.vcf I=025.vcf I=026.vcf I=027.vcf I=028.vcf I=029.vcf
+[kruegg@n2192 chromo_pieces]$ module load java
+[kruegg@n2192 chromo_pieces]$ java -jar $PICARD_JAR SortVcf $INPUTS O=chinook-full-omyV6.vcf
+[Tue Jan 17 20:53:08 PST 2017] picard.vcf.SortVcf INPUT=[001.vcf, 002.vcf, 003.vcf, 004.vcf, 005.vcf, 006.vcf, 007.vcf, 008.vcf, 009.vcf, 010.vcf, 011.vcf, 012.vcf, 013.vcf, 014.vcf, 015.vcf, 016.vcf, 017.vcf, 018.vcf, 019.vcf, 020.vcf, 021.vcf, 022.vcf, 023.vcf, 024.vcf, 025.vcf, 026.vcf, 027.vcf, 028.vcf, 029.vcf] OUTPUT=chinook-full-omyV6.vcf    VERBOSITY=INFO QUIET=false VALIDATION_STRINGENCY=STRICT COMPRESSION_LEVEL=5 MAX_RECORDS_IN_RAM=500000 CREATE_INDEX=true CREATE_MD5_FILE=false GA4GH_CLIENT_SECRETS=client_secrets.json
+[Tue Jan 17 20:53:08 PST 2017] Executing as kruegg@n2192 on Linux 2.6.32-642.11.1.el6.x86_64 amd64; Java HotSpot(TM) 64-Bit Server VM 1.8.0_111-b14; Picard version: 2.7.1-SNAPSHOT
+INFO    2017-01-17 20:53:10 SortVcf Reading entries from input file 1
+INFO    2017-01-17 20:53:11 SortVcf read        25,000 records.  Elapsed time: 00:00:01s.  Time for last 25,000:    1s.  Last read position: omy01:57,909,909
+INFO    2017-01-17 20:53:12 SortVcf Reading entries from input file 2
+INFO    2017-01-17 20:53:12 SortVcf read        50,000 records.  Elapsed time: 00:00:02s.  Time for last 25,000:    1s.  Last read position: omy02:35,641,871
+INFO    2017-01-17 20:53:15 SortVcf Reading entries from input file 3
+...
+[kruegg@n2192 chromo_pieces]$ mv chinook-full-omyV6.vcf* ../
+```
+
+Now, the file is in `/u/nobackup/klohmuel/kruegg/Mykiss/Chinook_all_preps/SNPs/chinook-full-omyV6.vcf`.
+
+### Light SNP Filtering
+
+As before, I do a very light filtering:
+
+``` sh
+[kruegg@n2196 SNPs]$ module load vcftools
+[kruegg@n2196 SNPs]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Chinook_all_preps/SNPs
+[kruegg@n2196 SNPs]$ vcftools --vcf chinook-full-omyV6.vcf --out chinook-light  --remove-indels --min-alleles 2 --max-alleles 2 --maf 0.05  --max-missing 0.1 --recode
+
+VCFtools - 0.1.14
+(C) Adam Auton and Anthony Marcketta 2009
+
+Parameters as interpreted:
+    --vcf chinook-full-omyV6.vcf
+    --maf 0.05
+    --max-alleles 2
+    --min-alleles 2
+    --max-missing 0.1
+    --out chinook-light
+    --recode
+    --remove-indels
+
+After filtering, kept 250 out of 250 Individuals
+Outputting VCF file...
+After filtering, kept 56220 out of a possible 758590 Sites
+Run Time = 97.00 seconds
+[kruegg@n2196 SNPs]$ gzip chinook-light.recode.vcf 
+[kruegg@n2196 SNPs]$ du -h chinook-light.recode.vcf.gz 
+20M chinook-light.recode.vcf.gz
+```
+
+Then I bring that to my laptop: `/Users/eriq/Documents/git-repos/genoscape-bioinformatics/chinook-scripts/plink/chinook-light.recode.vcf.gz`
+
+Association Test Stuff
+----------------------
+
+For now I am not going to worry about accounting for population structure. I am just going to do what Mike and company did for the first submission, which is throw everyone in as either Mature or Premature, regardless of population.
+
+### Further filtering
+
+But we will do some continued filtering: drop indivs with more than 70% missing data and SNPs missing in more than 50% of the indivs:
+
+``` sh
+2017-01-18 06:00 /plink/--% (master) pwd
+/Users/eriq/Documents/git-repos/genoscape-bioinformatics/chinook-scripts/plink
+2017-01-18 06:00 /plink/--% (master) plink --vcf chinook-light.recode.vcf.gz  --aec --mind 0.7 --geno 0.5   --make-bed --out chinook33K_184 --double-id
+PLINK v1.90b3.42 64-bit (20 Sep 2016)      https://www.cog-genomics.org/plink2
+(C) 2005-2016 Shaun Purcell, Christopher Chang   GNU General Public License v3
+Logging to chinook33K_184.log.
+Options in effect:
+  --allow-extra-chr
+  --double-id
+  --geno 0.5
+  --make-bed
+  --mind 0.7
+  --out chinook33K_184
+  --vcf chinook-light.recode.vcf.gz
+
+4096 MB RAM detected; reserving 2048 MB for main workspace.
+--vcf: chinook33K_184-temporary.bed + chinook33K_184-temporary.bim +
+chinook33K_184-temporary.fam written.
+56220 variants loaded from .bim file.
+250 people (0 males, 0 females, 250 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to chinook33K_184.nosex .
+66 people removed due to missing genotype data (--mind).
+IDs written to chinook33K_184.irem .
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 184 founders and 0 nonfounders present.
+Calculating allele frequencies... done.
+Total genotyping rate in remaining samples is 0.558651.
+22593 variants removed due to missing genotype data (--geno).
+33627 variants and 184 people pass filters and QC.
+Note: No phenotypes present.
+--make-bed to chinook33K_184.bed + chinook33K_184.bim + chinook33K_184.fam ...
+done.
+```
+
+That leaves us with only 33,627 SNPs in 184 fish But with luck we will still have the SNPs that Mike et al. found.
+
+### Defining cases
+
+So, first we are going to need to figure out who is whom from the meta data:
+
+``` r
+# read in the meta data
+chinook_meta <- readxl::read_excel(path = "../../chinook-scripts/other_inputs/chinook_meta.xls", sheet = 1)
+
+
+# get a list of the individuals we have retained from the genomic data
+retained <- read_delim("../../chinook-scripts/plink/chinook33K_184.fam", col_names = FALSE, delim = " ") %>%
+  select(X1) %>%
+  unlist() %>% unname()
+#> Parsed with column specification:
+#> cols(
+#>   X1 = col_character(),
+#>   X2 = col_character(),
+#>   X3 = col_integer(),
+#>   X4 = col_integer(),
+#>   X5 = col_integer(),
+#>   X6 = col_integer()
+#> )
+
+# now pick out only those in the retained file
+chinook_retained <- chinook_meta %>%
+  filter(`Sample DNA ID` %in% retained)
+
+# now make a file of the cases
+chinook_retained %>%
+  filter(`Migration Category` == "Premature") %>%
+  mutate(a1 = `Sample DNA ID`, a2 = `Sample DNA ID`) %>%
+  select(a1, a2) %>% 
+  write.table(., quote = F, sep = " ", row.names = F, col.names = F, file = "../../chinook-scripts/plink/chinook_cases.txt") 
+```
+
+### Association Test
+
+And now let's do a quick association test:
+
+``` sh
+2017-01-18 06:16 /plink/--% (master) pwd
+/Users/eriq/Documents/git-repos/genoscape-bioinformatics/chinook-scripts/plink
+2017-01-18 06:16 /plink/--% (master) plink -bfile chinook33K_184  --aec --make-pheno chinook_cases.txt '*'  --assoc fisher --out chinook_ass --allow-no-sex
+PLINK v1.90b3.42 64-bit (20 Sep 2016)      https://www.cog-genomics.org/plink2
+(C) 2005-2016 Shaun Purcell, Christopher Chang   GNU General Public License v3
+Logging to chinook_ass.log.
+Options in effect:
+  --allow-extra-chr
+  --allow-no-sex
+  --assoc fisher
+  --bfile chinook33K_184
+  --make-pheno chinook_cases.txt *
+  --out chinook_ass
+
+4096 MB RAM detected; reserving 2048 MB for main workspace.
+33627 variants loaded from .bim file.
+184 people (0 males, 0 females, 184 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to chinook_ass.nosex .
+--make-pheno: 184 phenotype values set.
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 184 founders and 0 nonfounders present.
+Calculating allele frequencies... done.
+Total genotyping rate is 0.721972.
+33627 variants and 184 people pass filters and QC.
+Among remaining phenotypes, 84 are cases and 100 are controls.
+Writing C/C --assoc report to chinook_ass.assoc.fisher ...
+done.
+```
+
+### Looking at the results
+
+``` r
+chin_ass <- read.table("../../chinook-scripts/plink/chinook_ass.assoc.fisher", header=T, stringsAsFactors = F)
+
+arrange(chin_ass, P) %>% head(n=20)
+#>      CHR SNP       BP A1     F_A     F_U A2         P       OR
+#> 1  omy28   . 11589347  G 0.03704 0.60340  C 1.632e-21  0.02527
+#> 2  omy28   . 11609636  T 0.70970 0.17720  C 5.886e-20 11.35000
+#> 3  omy28   . 11857798  T 0.04464 0.37180  G 3.298e-11  0.07896
+#> 4  omy28   . 12667404  T 0.20590 0.62310  A 1.936e-10  0.15680
+#> 5  omy24   . 28127228  A 0.01020 0.30000  G 6.526e-10  0.02405
+#> 6  omy02   . 62541571  G 0.32290 0.03333  T 8.285e-09 13.83000
+#> 7  omy04   . 30707905  T 0.14580 0.00000  G 2.524e-08       NA
+#> 8  omy18   . 26635175  T 0.48810 0.12930  G 3.111e-08  6.42000
+#> 9  omy02   . 46180986  A 0.71950 0.32140  G 5.108e-08  5.41500
+#> 10 omy28   .  4696881  C 0.16380 0.47470  A 5.165e-08  0.21680
+#> 11 omy28   . 11857739  A 0.11540 0.36410  C 8.730e-08  0.22780
+#> 12 omy29   . 20990670  C 0.32090 0.07333  A 1.132e-07  5.97100
+#> 13 omy09   . 45780229  A 0.29230 0.06000  T 2.641e-07  6.47100
+#> 14 omy15   . 33640761  C 0.23390 0.02778  A 2.798e-07 10.68000
+#> 15 omy23   . 19172664  C 0.11220 0.41670  T 3.971e-07  0.17700
+#> 16 omy02   . 69186390  C 0.11640 0.00000  T 4.020e-07       NA
+#> 17 omy06   . 19677931  G 0.03061 0.30000  A 4.039e-07  0.07368
+#> 18 omy28   . 27210043  G 0.22860 0.03704  C 4.090e-07  7.70400
+#> 19 omy22   . 26824120  A 0.61900 0.26320  G 5.933e-07  4.55000
+#> 20 omy16   . 38839466  C 0.00000 0.15670  T 6.198e-07  0.00000
+```
+
+OK, that looks like 2 SNPs that we could be really excited about on omy28. Though I am not sure how this corresponds with what Prince et al found. Let's grab the top four in order along omy28
+
+``` r
+top4 <- chin_ass %>%
+  top_n(n = 4, wt = -P) %>%
+  arrange(BP)
+
+top4
+#>     CHR SNP       BP A1     F_A    F_U A2         P       OR
+#> 1 omy28   . 11589347  G 0.03704 0.6034  C 1.632e-21  0.02527
+#> 2 omy28   . 11609636  T 0.70970 0.1772  C 5.886e-20 11.35000
+#> 3 omy28   . 11857798  T 0.04464 0.3718  G 3.298e-11  0.07896
+#> 4 omy28   . 12667404  T 0.20590 0.6231  A 1.936e-10  0.15680
+```
+
+And let us compare that to what Mike and company found when they were ignoring population structure:
+
+``` r
+mike4 <- readxl::read_excel("../../chinook-scripts/other_inputs/chinook-meta-submission-1-biorxiv.xls", sheet = 3)
+as.data.frame(mike4)
+#>   Scaffold79929e Position Premature Migration Associated Allele
+#> 1                  537741                                     A
+#> 2                  569200                                     G
+#> 3                  592438                                     T
+#> 4                  595121                                     G
+#>   Mature Migration Associated Allele Association Strength (Chi-squared)
+#> 1                                  C                           48.22710
+#> 2                                  C                           62.51882
+#> 3                                  C                           39.82900
+#> 4                                  A                           54.40164
+#>   Association Strength (P-value)
+#> 1                   3.796060e-12
+#> 2                   2.639107e-15
+#> 3                   2.771990e-10
+#> 4                   1.634265e-13
+```
+
+Wow! It doesn't look like those correspond well at all. Let's look at the diffs:
+
+``` r
+tbp <- top4$BP
+mbp <- mike4$`Scaffold79929e Position`
+names(tbp) <- tbp
+names(mbp) <- mbp
+
+diffmat <- outer(tbp, mbp, "-")
+diffmat
+#>            537741   569200   592438   595121
+#> 11589347 11051606 11020147 10996909 10994226
+#> 11609636 11071895 11040436 11017198 11014515
+#> 11857798 11320057 11288598 11265360 11262677
+#> 12667404 12129663 12098204 12074966 12072283
+```
+
+So, nothing is really lining up there. But at least we have some candidates if we want to try to find these and do some resequencing.
