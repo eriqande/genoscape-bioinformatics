@@ -47,7 +47,7 @@ FASTA=$1
 OutputPrefix=$2
 
 
-source $MODULE_SOURCE
+source /u/local/Modules/default/init/modules.sh
 module load bowtie2
 
 
