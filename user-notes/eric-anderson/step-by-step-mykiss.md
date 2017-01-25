@@ -1,6 +1,6 @@
 Step-by-step Mykiss
 ================
-13 January, 2017
+25 January, 2017
 
 -   [Introduction](#introduction)
 -   [Build bowtie genome data base](#build-bowtie-genome-data-base)
@@ -20,6 +20,7 @@ Step-by-step Mykiss
     -   [Extract Indivs and Genos from the original vcf](#extract-indivs-and-genos-from-the-original-vcf)
     -   [Figure out how positions in OmyV6 correspond to Mike's scaffold positions](#figure-out-how-positions-in-omyv6-correspond-to-mikes-scaffold-positions)
     -   [Get some sequence around 11613270](#get-some-sequence-around-11613270)
+    -   [Get 81 Kb of the sequence for designing primers](#get-81-kb-of-the-sequence-for-designing-primers)
 -   [Re-run everything but use Stacks' `clone_filter`](#re-run-everything-but-use-stacks-clone_filter)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -564,7 +565,7 @@ ump_ass <- read.table("~/Documents/UnsyncedData/Mykiss/ump_ass.assoc.fisher", he
   tbl_df
 arrange(ump_ass, P) %>%
   head(n=20)
-#> # A tibble: 20 × 9
+#> # A tibble: 20 x 9
 #>      CHR   SNP       BP    A1     F_A     F_U    A2         P        OR
 #>    <chr> <chr>    <int> <chr>   <dbl>   <dbl> <chr>     <dbl>     <dbl>
 #> 1  omy28     . 11667915     A 1.00000 0.06522     G 9.257e-21        NA
@@ -844,7 +845,7 @@ data_frame(
   prince = as.integer(colnames(tfmat)[colSums(tfmat) > 0]) 
   ) %>%
   mutate(add_to_prince_to_get_omyV6_pos = omyV6 - prince)
-#> # A tibble: 14 × 3
+#> # A tibble: 14 x 3
 #>       omyV6 prince add_to_prince_to_get_omyV6_pos
 #>       <int>  <int>                          <int>
 #> 1  11609793 592595                       11017198
@@ -906,6 +907,64 @@ Cool. Position 500 in that is supposedly migration-associated G/A SNP. It is a G
 So, I have saved that
 
     [kruegg@login1 Genome]$ samtools faidx omyV6Chr.fasta omy28:11612771-11613770 > ../chinook_sanger_primer_design/Scaffold79929e_595121
+
+### Get 81 Kb of the sequence for designing primers
+
+The thought is that we will carpet-bomb this thing with 32 500-bp MiSeq amplicons.
+So, we want to extract the roughly 80 Kb segment that includes most of the associated SNPs. Here we must list everything to see what we are talking about:
+
+``` r
+omy28_ass_snps <- hi_rollers %>% 
+  filter(CHR=="omy28") %>% 
+  arrange(BP) %>% 
+  as.data.frame()
+omy28_ass_snps
+#>       pop   CHR SNP       BP A1     F_A     F_U A2         P        OR
+#> 1     eel omy28   .  8516469  T 0.00000 0.61540  C 6.210e-09 0.000e+00
+#> 2     eel omy28   . 11384594  T 0.10870 0.80000  C 1.016e-09 3.049e-02
+#> 3  umpqua omy28   . 11589054  C 0.06250 0.90620  T 2.787e-12 6.897e-03
+#> 4  umpqua omy28   . 11609793  A 0.00000 0.52170  G 1.341e-08 0.000e+00
+#> 5  umpqua omy28   . 11609825  T 1.00000 0.07895  C 3.052e-16        NA
+#> 6     eel omy28   . 11609825  C 0.05882 1.00000  T 1.288e-13 0.000e+00
+#> 7  umpqua omy28   . 11613146  G 0.00000 0.85710  A 2.339e-09 0.000e+00
+#> 8  umpqua omy28   . 11613225  C 0.00000 0.80000  T 2.297e-10 0.000e+00
+#> 9  umpqua omy28   . 11613233  G 0.00000 0.85000  A 2.418e-11 0.000e+00
+#> 10 umpqua omy28   . 11613335  T 0.00000 0.89470  G 3.248e-17 0.000e+00
+#> 11    eel omy28   . 11613335  T 0.04545 1.00000  G 1.183e-11 0.000e+00
+#> 12 umpqua omy28   . 11613402  G 0.00000 0.89470  A 3.248e-17 0.000e+00
+#> 13    eel omy28   . 11613402  G 0.04545 1.00000  A 1.183e-11 0.000e+00
+#> 14 umpqua omy28   . 11613427  T 0.00000 0.88460  A 8.483e-11 0.000e+00
+#> 15 umpqua omy28   . 11613481  A 0.00000 0.79170  C 4.487e-11 0.000e+00
+#> 16 umpqua omy28   . 11667682  T 0.00000 0.92310  A 7.463e-14 0.000e+00
+#> 17    eel omy28   . 11667682  T 0.00000 1.00000  A 9.043e-11 0.000e+00
+#> 18 umpqua omy28   . 11667773  T 0.83330 0.08696  C 2.795e-12 5.250e+01
+#> 19    eel omy28   . 11667773  C 0.04762 1.00000  T 1.556e-17 0.000e+00
+#> 20 umpqua omy28   . 11667837  T 0.94440 0.09091  A 9.555e-16 1.700e+02
+#> 21 umpqua omy28   . 11667915  A 1.00000 0.06522  G 9.257e-21        NA
+#> 22    eel omy28   . 11667915  G 0.04348 1.00000  A 2.206e-18 0.000e+00
+#> 23 umpqua omy28   . 11667954  G 1.00000 0.06522  A 9.257e-21        NA
+#> 24    eel omy28   . 11667954  A 0.06522 1.00000  G 2.280e-17 0.000e+00
+#> 25 umpqua omy28   . 11668031  C 0.00000 0.87500  A 3.607e-15 0.000e+00
+#> 26    eel omy28   . 11668031  C 0.04762 1.00000  A 1.913e-12 0.000e+00
+#> 27 umpqua omy28   . 11803846  T 0.02632 0.73910  G 2.910e-12 9.539e-03
+#> 28 umpqua omy28   . 11803870  C 0.02632 0.65220  T 4.830e-10 1.441e-02
+#> 29 umpqua omy28   . 11985747  T 0.73330 0.05000  C 1.325e-09 5.225e+01
+#> 30 umpqua omy28   . 12179107  T 0.77780 0.10530  G 3.912e-09 2.975e+01
+```
+
+From that output it looks me like it would be good to start at about 11588054. That is 1 Kb before the SNP at 11589054. (It is also about 1.3 Kb before the most associated Chinook SNP at 11589347). Then we can consider ending our segment at 11669031 which is 1 KB past the SNP at 11668031. That gives us almost 81 KB of sequence that spans the highly associated regions that we found with GATK and PLINK in both steelhead and chinook.
+
+So, I am going to extract that sequence and then hand it off to Mac and Anthony for some primer design.
+
+``` sh
+[kruegg@login3 Genome]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Genome
+[kruegg@login3 Genome]$ module load samtools
+[kruegg@login3 Genome]$ samtools faidx omyV6Chr.fasta  omy28:11588054-11669031 >  ../Mykiss_all_preps/SNPs/81_kb_assoc_region.fasta 
+```
+
+The result is in:
+`/u/nobackup/klohmuel/kruegg/Mykiss/Mykiss_all_preps/SNPs/81_kb_assoc_region.fasta`. I will email this to Carlos, Mac, and Anthony.
 
 Re-run everything but use Stacks' `clone_filter`
 ------------------------------------------------

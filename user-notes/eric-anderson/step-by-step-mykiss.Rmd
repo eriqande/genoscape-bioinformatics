@@ -676,6 +676,39 @@ So, I have saved that
 [kruegg@login1 Genome]$ samtools faidx omyV6Chr.fasta omy28:11612771-11613770 > ../chinook_sanger_primer_design/Scaffold79929e_595121
 ```
 
+### Get 81 Kb of the sequence for designing primers
+The thought is that we will carpet-bomb this thing with 32 500-bp MiSeq amplicons.  
+So, we want to extract the roughly 80 Kb segment that includes most of the 
+associated SNPs.  Here we must list everything to see what we are talking about:
+```{r show-snps-table}
+omy28_ass_snps <- hi_rollers %>% 
+  filter(CHR=="omy28") %>% 
+  arrange(BP) %>% 
+  as.data.frame()
+omy28_ass_snps
+```
+
+From that output it looks me like it would be good to start at about 11588054.  That is
+1 Kb before the SNP at 11589054.  (It is also about 1.3 Kb before the most
+associated Chinook SNP at 11589347).  Then we can consider ending our segment at 11669031 which
+is 1 KB past the SNP at 11668031.  That gives us almost 81 KB of sequence that spans the highly
+associated regions that we found with GATK and PLINK in both steelhead and chinook.
+
+So, I am going to extract that sequence and then hand it off to Mac and Anthony for some primer
+design.  
+```{sh, eval=FALSE}
+[kruegg@login3 Genome]$ pwd
+/u/home/k/kruegg/nobackup-klohmuel/Mykiss/Genome
+[kruegg@login3 Genome]$ module load samtools
+[kruegg@login3 Genome]$ samtools faidx omyV6Chr.fasta  omy28:11588054-11669031 >  ../Mykiss_all_preps/SNPs/81_kb_assoc_region.fasta 
+```
+The result is in:  
+`/u/nobackup/klohmuel/kruegg/Mykiss/Mykiss_all_preps/SNPs/81_kb_assoc_region.fasta`.
+I will email this to Carlos, Mac, and Anthony.
+
+
+
+
 ## Re-run everything but use Stacks' `clone_filter` 
 
 This is less relevant, since I found the association with the data filtered with samtools.
