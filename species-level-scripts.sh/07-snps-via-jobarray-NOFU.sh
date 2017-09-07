@@ -9,14 +9,26 @@
 #$ -t 1-3:1
 #$ -m a
 
+
+# full run will be 286
+
+# TO PREPARE:
+# mkdir SNP-array
+# cd SNP-array
+# samtools view  -H ../MergedBams/NOFUv0-merged.bam | sed 's/SN://g; s/LN://g' | awk '/^@SQ/' | awk -f ~/genoscape-bioinformatics/script/assemble-scaffold-lists.awk > comm_lines.txt
+#
+#
+#
+
+
 source ~/genoscape-bioinformatics/program-defs.sh
 source $MODULE_SOURCE
 
 module load java
 
 
-FASTA=../Genome/GCA_001281735.1_ASM128173v1_genomic.fna
-BAM=../MergedBams/twenty-birds-ZOLAv0-merged.bam
+FASTA=../Genome/Fulmarus_glacialis.fna
+BAM=../MergedBams/NOFUv0-merged.bam
 COMMS=comm_lines.txt
 
 OUTN=$(printf '%04d' $SGE_TASK_ID)
