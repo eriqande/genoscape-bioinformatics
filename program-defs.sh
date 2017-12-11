@@ -11,11 +11,14 @@ CLONE_FILTER=/u/nobackup/klohmuel/kruegg/bin/stacks-1.32/clone_filter
 PICARD_JAR=/u/nobackup/klohmuel/kruegg/bin/picard.jar
 
 # this can be obtained by downloading via a browser, then scp-ing it
-# Old version 3.6
+# version 3.6 by default
 # GATK_JAR=/u/nobackup/klohmuel/kruegg/bin/GenomeAnalysisTK.jar
 
 # This is the 3.8 version
-GATK_JAR=/u/nobackup/klohmuel/kruegg/bin/GenomeAnalysisTK-3.8-0-ge9d806836/GenomeAnalysisTK.jar
+GATK_3_8_JAR=/u/nobackup/klohmuel/kruegg/bin/GenomeAnalysisTK-3.8-0-ge9d806836/GenomeAnalysisTK.jar
+
+# the 3.7 version
+GATK_3_7_JAR=/u/nobackup/klohmuel/kruegg/bin/GenomeAnalysisTK-3.7-0-gcfedb67/GenomeAnalysisTK.jar
 
 NUCMER=/u/nobackup/klohmuel/kruegg/bin/MUMmer3.23/nucmer
 
